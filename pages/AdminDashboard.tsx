@@ -196,6 +196,12 @@ export const AdminDashboard: React.FC = () => {
         return acc;
     }, {} as Record<string, number>);
 
+    // Get Technicians for Dropdown
+    const technicians = users
+        .filter(u => u.role === UserRole.TECHNICIAN)
+        .map(u => u.fullName)
+        .filter(Boolean); // Ensure no empty names
+
     // Radial Bar Data Preparation
     const radialData = statusData
         .filter(d => d.count > 0)
@@ -517,6 +523,7 @@ export const AdminDashboard: React.FC = () => {
                                         <th className="px-6 py-3 font-semibold">Doctor</th>
                                         <th className="px-6 py-3 font-semibold">Type</th>
                                         <th className="px-6 py-3 font-semibold">Due Date</th>
+                                        <th className="px-6 py-3 font-semibold">Technician</th>
                                         <th className="px-6 py-3 font-semibold">Stage</th>
                                         <th className="px-6 py-3 font-semibold text-center">Action</th>
                                     </tr>
@@ -543,6 +550,14 @@ export const AdminDashboard: React.FC = () => {
                                                 </td>
                                                 <td className="px-6 py-3">
                                                     <EditableField type="date" value={order.dueDate} onSave={(v) => handleOrderUpdate(order.id, 'dueDate', v)} />
+                                                </td>
+                                                <td className="px-6 py-3">
+                                                    <EditableField
+                                                        type="select"
+                                                        value={order.assignedTech || 'Unassigned'}
+                                                        options={['Unassigned', ...technicians]}
+                                                        onSave={(v) => handleOrderUpdate(order.id, 'assignedTech', v === 'Unassigned' ? '' : v)}
+                                                    />
                                                 </td>
                                                 <td className="px-6 py-3">
                                                     <EditableField

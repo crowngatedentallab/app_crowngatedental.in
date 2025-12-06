@@ -549,8 +549,8 @@ export const AdminDashboard: React.FC = () => {
                                                     <EditableField
                                                         type="select"
                                                         value={order.typeOfWork}
-                                                        options={products.map(p => p.name)}
-                                                        onSave={(v) => handleOrderUpdate(order.id, 'typeOfWork', v)}
+                                                        options={['Select Type...', ...products.map(p => p.name)]}
+                                                        onSave={(v) => handleOrderUpdate(order.id, 'typeOfWork', v === 'Select Type...' ? '' : v)}
                                                     />
                                                 </td>
                                                 <td className="px-6 py-3">

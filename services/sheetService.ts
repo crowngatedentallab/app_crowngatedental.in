@@ -7,7 +7,7 @@ import { MOCK_ORDERS, MOCK_USERS, MOCK_PRODUCTS } from './mockData';
 // ------------------------------------------------------------------
 // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
 // Example: "https://script.google.com/macros/s/AKfycbx.../exec"
-const GOOGLE_SCRIPT_URL: string = "https://script.google.com/macros/s/AKfycbx-OGoVYBrqpfAsvy5TXA0qFpmuDS5zWJw7K8RbIYq_Le3S3_c7pqvVbRcQLAZ8mefk/exec"; 
+const GOOGLE_SCRIPT_URL: string = "https://script.google.com/macros/s/AKfycbx-OGoVYBrqpfAsvy5TXA0qFpmuDS5zWJw7K8RbIYq_Le3S3_c7pqvVbRcQLAZ8mefk/exec";
 // ------------------------------------------------------------------
 
 class SheetService {
@@ -23,13 +23,13 @@ class SheetService {
     this.useLiveMode = GOOGLE_SCRIPT_URL.length > 0;
 
     if (!this.useLiveMode) {
-        console.log("⚠️ RUNNING IN DEMO MODE (Local Storage). Add GOOGLE_SCRIPT_URL in services/sheetService.ts to go live.");
-        const savedOrders = localStorage.getItem('crowngate_orders');
-        if (savedOrders) this.orders = JSON.parse(savedOrders);
-        const savedUsers = localStorage.getItem('crowngate_users');
-        if (savedUsers) this.users = JSON.parse(savedUsers);
-        const savedProducts = localStorage.getItem('crowngate_products');
-        if (savedProducts) this.products = JSON.parse(savedProducts);
+      console.log("⚠️ RUNNING IN DEMO MODE (Local Storage). Add GOOGLE_SCRIPT_URL in services/sheetService.ts to go live.");
+      const savedOrders = localStorage.getItem('crowngate_orders');
+      if (savedOrders) this.orders = JSON.parse(savedOrders);
+      const savedUsers = localStorage.getItem('crowngate_users');
+      if (savedUsers) this.users = JSON.parse(savedUsers);
+      const savedProducts = localStorage.getItem('crowngate_products');
+      if (savedProducts) this.products = JSON.parse(savedProducts);
     }
   }
 
@@ -51,54 +51,54 @@ class SheetService {
 
   // --- API HELPER ---
   private async apiCall(action: string, sheetName: string, data?: any, id?: string) {
-      if (!this.useLiveMode) return null;
+    if (!this.useLiveMode) return null;
 
-      try {
-          // Google Apps Script requires sending data as a POST text payload to avoid CORS preflight issues.
-          // CRITICAL FIX: We must explicitly set Content-Type to text/plain. 
-          // If we let it default or use application/json, browsers send an OPTIONS request which GAS rejects.
-          const payload = { action, sheet: sheetName, data, id };
-          
-          const response = await fetch(GOOGLE_SCRIPT_URL, {
-              method: 'POST',
-              headers: {
-                "Content-Type": "text/plain;charset=utf-8",
-              },
-              body: JSON.stringify(payload),
-          });
-          
-          if (!response.ok) {
-             throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
-          }
+    try {
+      // Google Apps Script requires sending data as a POST text payload to avoid CORS preflight issues.
+      // CRITICAL FIX: We must explicitly set Content-Type to text/plain. 
+      // If we let it default or use application/json, browsers send an OPTIONS request which GAS rejects.
+      const payload = { action, sheet: sheetName, data, id };
 
-          return await response.json();
-      } catch (error) {
-          console.error("API Connection Error:", error);
-          throw error;
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
       }
+
+      return await response.json();
+    } catch (error) {
+      console.error("API Connection Error:", error);
+      throw error;
+    }
   }
 
   // --- ORDER METHODS ---
   async getOrders(): Promise<Order[]> {
     if (this.useLiveMode) {
-        try {
-            const result = await this.apiCall('read', 'Orders');
-            if (Array.isArray(result)) {
-                // Normalize dates to YYYY-MM-DD by stripping time component
-                const normalizedOrders = result.map((o: any) => ({
-                  ...o,
-                  dueDate: o.dueDate && typeof o.dueDate === 'string' ? o.dueDate.split('T')[0] : o.dueDate,
-                  submissionDate: o.submissionDate && typeof o.submissionDate === 'string' ? o.submissionDate.split('T')[0] : o.submissionDate,
-                })) as Order[];
-    
-                this.orders = normalizedOrders;
-                this.notify(); 
-                return this.orders;
-            }
-        } catch (e) {
-            console.warn("Failed to fetch live orders, showing cached if available.", e);
+      try {
+        const result = await this.apiCall('read', 'Orders');
+        if (Array.isArray(result)) {
+          // Normalize dates to YYYY-MM-DD by stripping time component
+          const normalizedOrders = result.map((o: any) => ({
+            ...o,
+            dueDate: o.dueDate && typeof o.dueDate === 'string' ? o.dueDate.split('T')[0] : o.dueDate,
+            submissionDate: o.submissionDate && typeof o.submissionDate === 'string' ? o.submissionDate.split('T')[0] : o.submissionDate,
+          })) as Order[];
+
+          this.orders = normalizedOrders;
+          this.notify();
+          return this.orders;
         }
-        return this.orders; 
+      } catch (e) {
+        console.warn("Failed to fetch live orders, showing cached if available.", e);
+      }
+      return this.orders;
     }
     return new Promise((resolve) => setTimeout(() => resolve([...this.orders]), 300));
   }
@@ -116,21 +116,21 @@ class SheetService {
     this.notify();
 
     if (this.useLiveMode) {
-        this.apiCall('create', 'Orders', newOrder).catch(err => {
-            console.error("Failed to sync order to cloud:", err);
-        });
+      this.apiCall('create', 'Orders', newOrder).catch(err => {
+        console.error("Failed to sync order to cloud:", err);
+      });
     }
 
     return newOrder;
   }
 
   async updateOrder(id: string, updates: Partial<Order>): Promise<void> {
-     // OPTIMISTIC UPDATE
+    // OPTIMISTIC UPDATE
     this.orders = this.orders.map(o => o.id === id ? { ...o, ...updates } : o);
     this.notify();
 
     if (this.useLiveMode) {
-        await this.apiCall('update', 'Orders', updates, id).catch(err => console.error("Update failed", err));
+      await this.apiCall('update', 'Orders', updates, id).catch(err => console.error("Update failed", err));
     }
   }
 
@@ -140,44 +140,76 @@ class SheetService {
     this.notify();
 
     if (this.useLiveMode) {
-        await this.apiCall('delete', 'Orders', null, id).catch(err => console.error("Delete failed", err));
+      await this.apiCall('delete', 'Orders', null, id).catch(err => console.error("Delete failed", err));
     }
   }
 
   // --- USER METHODS ---
   async getUsers(): Promise<User[]> {
     if (this.useLiveMode) {
-        try {
-            const result = await this.apiCall('read', 'Users');
-            if (Array.isArray(result)) {
-                this.users = result as User[];
-                return this.users;
-            }
-        } catch (e) {
-            console.warn("Failed to fetch live users.", e);
+      try {
+        const result = await this.apiCall('read', 'Users');
+        if (Array.isArray(result)) {
+          this.users = result as User[];
+          return this.users;
         }
-        return [];
+      } catch (e) {
+        console.warn("Failed to fetch live users.", e);
+      }
+      return [];
     }
     return new Promise((resolve) => setTimeout(() => resolve([...this.users]), 300));
   }
 
-  async addUser(user: Omit<User, 'id'>): Promise<void> {
-      console.warn("User management is restricted to Google Sheets.");
+  async addUser(user: Omit<User, 'id'>): Promise<User> {
+    const newUser: User = {
+      ...user,
+      id: `USR-${Math.floor(Math.random() * 10000)}`,
+    };
+
+    // Optimistic
+    this.users = [...this.users, newUser];
+    this.notify();
+
+    if (this.useLiveMode) {
+      await this.apiCall('create', 'Users', newUser);
+    }
+    return newUser;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<void> {
+    // Optimistic
+    this.users = this.users.map(u => u.id === id ? { ...u, ...updates } : u);
+    this.notify();
+
+    if (this.useLiveMode) {
+      await this.apiCall('update', 'Users', updates, id);
+    }
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    // Optimistic
+    this.users = this.users.filter(u => u.id !== id);
+    this.notify();
+
+    if (this.useLiveMode) {
+      await this.apiCall('delete', 'Users', null, id);
+    }
   }
 
   // --- PRODUCT (RESTORATION TYPE) METHODS ---
   async getProducts(): Promise<Product[]> {
     if (this.useLiveMode) {
-        try {
-            const result = await this.apiCall('read', 'Products');
-            if (Array.isArray(result) && result.length > 0) {
-                this.products = result as Product[];
-                return this.products;
-            }
-        } catch (e) {
-             console.warn("Failed to fetch products, using default.", e);
+      try {
+        const result = await this.apiCall('read', 'Products');
+        if (Array.isArray(result) && result.length > 0) {
+          this.products = result as Product[];
+          return this.products;
         }
-        return this.products; 
+      } catch (e) {
+        console.warn("Failed to fetch products, using default.", e);
+      }
+      return this.products;
     }
     return new Promise((resolve) => setTimeout(() => resolve([...this.products]), 300));
   }
@@ -193,9 +225,18 @@ class SheetService {
     this.notify();
 
     if (this.useLiveMode) {
-       await this.apiCall('create', 'Products', newProduct);
+      await this.apiCall('create', 'Products', newProduct);
     }
     return newProduct;
+  }
+
+  async updateProduct(id: string, name: string): Promise<void> {
+    this.products = this.products.map(p => p.id === id ? { ...p, name } : p);
+    this.notify();
+
+    if (this.useLiveMode) {
+      await this.apiCall('update', 'Products', { name }, id);
+    }
   }
 
   async deleteProduct(id: string): Promise<void> {

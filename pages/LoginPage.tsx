@@ -108,7 +108,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         <div className="mt-8 pt-6 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-400">
-            For access issues, please contact Crowngate Administration.
+            For access issues, please contact Crowngate Administration.<br />
+            <a href="https://crowngatedental.in" target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:text-brand-800 font-medium mt-1 inline-block">crowngatedental.in</a>
           </p>
 
         </div>

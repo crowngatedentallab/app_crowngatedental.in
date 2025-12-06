@@ -1,0 +1,5 @@
+{
+  "name": "Crowngate Dental Lab Portal",
+  "description": "A centralized, futuristic dental lab management system connecting Doctors, Technicians, and Admin. Features a Master Sheet style database, AI-powered insights, and role-based interfaces.",
+  "requestFramePermissions": []
+}

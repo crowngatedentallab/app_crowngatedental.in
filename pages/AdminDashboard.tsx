@@ -546,7 +546,12 @@ export const AdminDashboard: React.FC = () => {
                                                     <EditableField value={order.doctorName} onSave={(v) => handleOrderUpdate(order.id, 'doctorName', v)} />
                                                 </td>
                                                 <td className="px-6 py-3">
-                                                    <EditableField value={order.typeOfWork} onSave={(v) => handleOrderUpdate(order.id, 'typeOfWork', v)} />
+                                                    <EditableField
+                                                        type="select"
+                                                        value={order.typeOfWork}
+                                                        options={products.map(p => p.name)}
+                                                        onSave={(v) => handleOrderUpdate(order.id, 'typeOfWork', v)}
+                                                    />
                                                 </td>
                                                 <td className="px-6 py-3">
                                                     <EditableField type="date" value={order.dueDate} onSave={(v) => handleOrderUpdate(order.id, 'dueDate', v)} />

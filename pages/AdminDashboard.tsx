@@ -34,6 +34,15 @@ export const AdminDashboard: React.FC = () => {
     const [filterDoctor, setFilterDoctor] = useState('All');
     const [filterStatus, setFilterStatus] = useState('All');
 
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '-';
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
+        }
+        return dateString;
+    };
+
     useEffect(() => {
         const init = async () => {
             setLoading(true);
@@ -594,6 +603,7 @@ export const AdminDashboard: React.FC = () => {
                                 <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                                     <tr>
                                         <th className="px-6 py-3 font-semibold">Order ID</th>
+                                        <th className="px-6 py-3 font-semibold">Date Created</th>
                                         <th className="px-6 py-3 font-semibold">Patient</th>
                                         <th className="px-6 py-3 font-semibold">Doctor</th>
                                         <th className="px-6 py-3 font-semibold">Type</th>
@@ -606,7 +616,7 @@ export const AdminDashboard: React.FC = () => {
                                 <tbody className="divide-y divide-slate-100">
                                     {filteredOrders.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="text-center py-8 text-slate-400">
+                                            <td colSpan={9} className="text-center py-8 text-slate-400">
                                                 No orders match the selected filters.
                                             </td>
                                         </tr>
@@ -614,6 +624,7 @@ export const AdminDashboard: React.FC = () => {
                                         filteredOrders.map((order, idx) => (
                                             <tr key={order.id} className={`hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
                                                 <td className="px-6 py-3 font-mono text-xs text-slate-400">{order.id}</td>
+                                                <td className="px-6 py-3 text-slate-500 text-xs">{formatDate(order.submissionDate)}</td>
                                                 <td className="px-6 py-3 font-medium text-slate-900">
                                                     <EditableField value={order.patientName} onSave={(v) => handleOrderUpdate(order.id, 'patientName', v)} />
                                                 </td>

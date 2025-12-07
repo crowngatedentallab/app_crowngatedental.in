@@ -13,8 +13,8 @@ import {
     setDoc,
     runTransaction,
     arrayUnion,
-    orderBy,
-    limit
+    // orderBy, // Unused after fix
+    // limit // Unused after fix
 } from "firebase/firestore";
 import { Order, User, Product, UserRole, OrderStatus, Notification } from "../types";
 
@@ -23,12 +23,14 @@ export const firestoreService = {
     getNotifications: async (userId: string): Promise<Notification[]> => {
         const q = query(
             collection(db, "notifications"),
-            where("userId", "==", userId),
-            orderBy("createdAt", "desc"),
-            limit(20)
+            where("userId", "==", userId)
+            // Removed orderBy("createdAt", "desc") and limit(20) to avoid needing a composite index for now.
+            // Client-side sort is sufficient for low volume.
         );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+        const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+        // Client-side sort
+        return notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 20);
     },
 
     createNotification: async (notification: Omit<Notification, 'id'>) => {

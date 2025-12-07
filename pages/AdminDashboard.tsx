@@ -58,26 +58,43 @@ export const AdminDashboard: React.FC = () => {
     }, []);
 
     const loadData = async () => {
-        const [ordersData, usersData, productsData, notificationsData] = await Promise.all([
-            firestoreService.getOrders(),
-            firestoreService.getUsers(),
-            firestoreService.getProducts(),
-            firestoreService.getNotifications('admin')
-        ]);
-        setOrders(ordersData);
-        setUsers(usersData);
-        setProducts(productsData);
-        setNotifications(notificationsData);
-        // setNotifications(notificationsData);
+        try {
+            // Load core data first
+            const [ordersData, usersData, productsData] = await Promise.all([
+                firestoreService.getOrders(),
+                firestoreService.getUsers(),
+                firestoreService.getProducts()
+            ]);
+            setOrders(ordersData);
+            setUsers(usersData);
+            setProducts(productsData);
 
-        // Fetch Counters
-        const countersData = await Promise.all(productsData.map(async p => {
-            if (!p.code) return { code: 'N/A', count: 0 };
-            const count = await firestoreService.getCounter(p.code);
-            return { code: p.code, count };
-        }));
-        const newCounters = countersData.reduce((acc, curr) => ({ ...acc, [curr.code]: curr.count }), {} as Record<string, number>);
-        setProductCounters(newCounters);
+            // Fetch Counters
+            const countersData = await Promise.all(productsData.map(async p => {
+                if (!p.code) return { code: 'N/A', count: 0 };
+                const count = await firestoreService.getCounter(p.code);
+                return { code: p.code, count };
+            }));
+            const newCounters = countersData.reduce((acc, curr) => ({ ...acc, [curr.code]: curr.count }), {} as Record<string, number>);
+            setProductCounters(newCounters);
+
+            // Attempt to load notifications safely
+            try {
+                // Find current admin user ID if possible, or just look for the default 'admin' user since we can't get auth context here easily yet
+                // For this MVP, we will try to find a user named 'admin' or just pass 'admin' and fix the service to handle it
+                const adminUser = usersData.find(u => u.username === 'admin');
+                const targetId = adminUser ? adminUser.id : 'admin';
+                const notificationsData = await firestoreService.getNotifications(targetId);
+                setNotifications(notificationsData);
+            } catch (err) {
+                console.warn("Failed to load notifications:", err);
+                // Don't crash the dashboard
+            }
+
+        } catch (error) {
+            console.error("Critical error loading dashboard data:", error);
+            // Even if this fails, we should try to render what we can, but if core fails, we are in trouble.
+        }
     };
 
     const handleOrderUpdate = async (id: string, field: keyof Order, value: string) => {

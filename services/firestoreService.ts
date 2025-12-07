@@ -102,14 +102,13 @@ export const firestoreService = {
     createOrder: async (order: Omit<Order, 'id'>): Promise<string> => {
         // 1. Get Product Code
         let productCode = 'GEN'; // Fallback
-        if (order.typeOfWork) {
+        const pType = order.productType || (order as any).typeOfWork;
+
+        if (pType) {
             try {
-                // Assuming typeOfWork stores product NAME currently, or ID?
-                // The form stores "name" in value currently in DoctorDashboard.
-                // We should ideally look up the product to get its code.
-                // For now, let's try to find the product by name.
+                // Look up product to get its code
                 const productsRef = collection(db, "products");
-                const q = query(productsRef, where("name", "==", order.typeOfWork));
+                const q = query(productsRef, where("name", "==", pType));
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
                     const prodData = querySnapshot.docs[0].data() as Product;
@@ -117,10 +116,10 @@ export const firestoreService = {
                         productCode = prodData.code;
                     } else {
                         // Generate a code from name if missing
-                        productCode = order.typeOfWork.substring(0, 2).toUpperCase();
+                        productCode = pType.substring(0, 2).toUpperCase();
                     }
                 } else {
-                    productCode = order.typeOfWork.substring(0, 2).toUpperCase();
+                    productCode = pType.substring(0, 2).toUpperCase();
                 }
             } catch (e) {
                 console.error("Error fetching product code", e);
@@ -189,7 +188,7 @@ export const firestoreService = {
 
     updateOrder: async (id: string, updates: Partial<Order>): Promise<void> => {
         // Check if we are updating the Product (Type of Work)
-        if (updates.typeOfWork) {
+        if (updates.productType) {
             const orderRef = doc(db, "orders", id);
             const orderSnap = await getDoc(orderRef);
 
@@ -197,10 +196,10 @@ export const firestoreService = {
                 const currentOrder = orderSnap.data() as Order;
 
                 // Only proceed if type effectively changed
-                if (currentOrder.typeOfWork !== updates.typeOfWork) {
+                if (currentOrder.productType !== updates.productType) {
 
                     // 1. Find the new Product Code
-                    const productsQuery = query(collection(db, "products"), where("name", "==", updates.typeOfWork));
+                    const productsQuery = query(collection(db, "products"), where("name", "==", updates.productType));
                     const productSnap = await getDocs(productsQuery);
 
                     if (!productSnap.empty) {
@@ -299,7 +298,7 @@ export const firestoreService = {
                 const users = await firestoreService.getUsers();
                 const doctor = users.find(u => u.fullName === currentOrder.doctorName && u.role === UserRole.DOCTOR);
 
-                if (doctor && (updates.status === OrderStatus.DISPATCHED || updates.status === OrderStatus.DELIVERED || updates.status === OrderStatus.RECEIVED)) {
+                if (doctor && (updates.status === OrderStatus.DISPATCHED || updates.status === OrderStatus.DELIVERED)) {
                     await firestoreService.createNotification({
                         userId: doctor.id,
                         title: `Case ${updates.status}`,
@@ -362,13 +361,13 @@ export const firestoreService = {
 
             // 2. Find all orders with this product type
             const ordersRef = collection(db, "orders");
-            const q = query(ordersRef, where("typeOfWork", "==", prodName));
+            const q = query(ordersRef, where("productType", "==", prodName));
             const querySnapshot = await getDocs(q);
 
             // 3. Update them to "Product Not Found"
             // Using Promise.all for parallel updates
             const updatePromises = querySnapshot.docs.map(doc =>
-                updateDoc(doc.ref, { typeOfWork: "Product Not Found" })
+                updateDoc(doc.ref, { productType: "Product Not Found" })
             );
             await Promise.all(updatePromises);
         }

@@ -7,7 +7,7 @@ import { OrderForm } from '../components/OrderForm';
 import { UserForm } from '../components/UserForm';
 import { MobileNav } from '../components/MobileNav';
 import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil, Plus, Bell } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, AreaChart, Area, RadialBarChart, RadialBar, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { StatusBadge } from '../components/StatusBadge';
 
 export const AdminDashboard: React.FC = () => {
@@ -219,86 +219,78 @@ export const AdminDashboard: React.FC = () => {
     };
 
     // --- CHART DATA PREPARATION ---
-    // 1. Status Distribution
-    const statusData = Object.values(OrderStatus).map(status => ({
-        name: status,
-        count: orders.filter(o => o.status === status).length
-    }));
+    // --- KPI CALCULATIONS ---
+    // 1. Best Performing Product Type
+    const productCounts = orders.reduce((acc, order) => {
+        const type = order.productType || 'Unknown';
+        const current = (acc[type] || 0) as number;
+        acc[type] = current + 1;
+        return acc;
+    }, {} as Record<string, number>);
+    const bestProduct = Object.entries(productCounts).sort((a, b) => (b[1] as number) - (a[1] as number))[0] || ['N/A', 0];
 
-    // 2. Monthly Volume
-    const getMonthlyVolume = () => {
-        const volume: Record<string, number> = {};
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        orders.forEach(order => {
-            if (!order.submissionDate) return;
+    // 2. Best Turnaround Time
+    // Group by product type and calc avg days
+    const productTurnarounds = orders.reduce((acc, order) => {
+        if (order.completedDate && order.submissionDate && order.productType) {
+            const start = new Date(order.submissionDate).getTime();
+            const end = new Date(order.completedDate).getTime();
+            const days = (end - start) / (1000 * 60 * 60 * 24);
+            if (!acc[order.productType]) acc[order.productType] = [];
+            (acc[order.productType] as number[]).push(days);
+        }
+        return acc;
+    }, {} as Record<string, number[]>);
+
+    let bestTurnaroundProduct = { name: 'N/A', days: 0 };
+    let fastestDays = Infinity;
+
+    Object.entries(productTurnarounds).forEach(([type, times]) => {
+        const timeArray = times as number[];
+        if (timeArray.length === 0) return;
+        const avg = timeArray.reduce((a, b) => a + b, 0) / timeArray.length;
+        if (avg < fastestDays) {
+            fastestDays = avg;
+            bestTurnaroundProduct = { name: type, days: avg };
+        }
+    });
+
+    // 3. Best & Worst Months
+    const monthCounts = orders.reduce((acc, order) => {
+        if (order.submissionDate) {
             const date = new Date(order.submissionDate);
-            if (isNaN(date.getTime())) return;
-            const monthKey = months[date.getMonth()];
-            volume[monthKey] = (volume[monthKey] || 0) + 1;
-        });
-        return months.map(m => ({ name: m, cases: volume[m] || 0 }));
-    };
-    const monthlyData = getMonthlyVolume();
-
-    const activeCount = orders.filter(o => o.status !== OrderStatus.DELIVERED && o.status !== OrderStatus.DISPATCHED).length;
-
-    // 3. Product Distribution
-    const productData = products.map(p => ({
-        name: p.name,
-        value: orders.filter(o => o.productType === p.name).length
-    })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
-
-    // 4. Top Doctors
-    const doctorActivity = orders.reduce((acc, order) => {
-        if (order.doctorName) { acc[order.doctorName] = (acc[order.doctorName] || 0) + 1; }
-        return acc;
-    }, {} as Record<string, number>);
-    const topDoctors = Object.entries(doctorActivity)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([name, count]) => ({ name, count }));
-
-    // 5. Avg Turnaround (Updated)
-    const completedOrdersWithTime = orders.filter(o => o.completedDate && o.submissionDate);
-    const avgTurnaround = (() => {
-        if (completedOrdersWithTime.length === 0) return "-";
-        const totalTime = completedOrdersWithTime.reduce((acc, o) => {
-            // Handle potential fallback if dates are strings
-            return acc + (new Date(o.completedDate!).getTime() - new Date(o.submissionDate!).getTime());
-        }, 0);
-        const days = totalTime / (1000 * 60 * 60 * 24 * completedOrdersWithTime.length);
-        return days > 0 ? `${days.toFixed(1)} Days` : "< 1 Day";
-    })();
-
-    // 6. Today's Data
-    const isToday = (dateString: string) => {
-        const date = new Date(dateString);
-        const today = new Date();
-        return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-    };
-    const todaysOrders = orders.filter(o => o.submissionDate && isToday(o.submissionDate));
-    const todaysCount = todaysOrders.length;
-    const todayBreakdown = todaysOrders.reduce((acc, order) => {
-        acc[order.status] = (acc[order.status] || 0) + 1;
+            if (!isNaN(date.getTime())) {
+                const month = date.toLocaleString('default', { month: 'long' }); // e.g., "January"
+                const current = (acc[month] || 0) as number;
+                acc[month] = current + 1;
+            }
+        }
         return acc;
     }, {} as Record<string, number>);
 
-    // Get Technicians for Dropdown
-    const technicians = users
+    const sortedMonths = Object.entries(monthCounts).sort((a, b) => (b[1] as number) - (a[1] as number));
+    const bestMonth = sortedMonths[0] || ['-', 0];
+    const worstMonth = sortedMonths[sortedMonths.length - 1] || ['-', 0];
+
+    // --- WORKLOAD DATA ---
+    // Technician Workload Table Data
+    const technicianWorkload = users
         .filter(u => u.role === UserRole.TECHNICIAN)
-        .map(u => u.fullName)
-        .filter(Boolean);
+        .map(tech => {
+            const techOrders = orders.filter(o => o.assignedTech === tech.fullName);
+            const statusCounts = Object.values(OrderStatus).reduce((acc, status) => {
+                acc[status] = techOrders.filter(o => o.status === status).length;
+                return acc;
+            }, {} as Record<OrderStatus, number>);
 
-    // Radial Bar Data
-    const radialData = statusData
-        .filter(d => d.count > 0)
-        .map((d, index) => ({
-            name: d.name,
-            count: d.count,
-            fill: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1'][index % 6]
-        }));
+            return {
+                name: tech.fullName,
+                total: techOrders.length,
+                ...statusCounts
+            };
+        });
 
-    // Unique Doctors
+    // Unique Doctors for Filter
     const uniqueDoctors = Array.from(new Set(orders.map(o => o.doctorName).filter(Boolean)));
 
     const CustomTooltip = ({ active, payload, label }: any) => {
@@ -358,48 +350,57 @@ export const AdminDashboard: React.FC = () => {
                     <>
                         {/* NEW DASHBOARD LAYOUT */}
 
-                        {/* ROW 1: MONTHLY TREND */}
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
-                            <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
-                                <TrendingUp size={20} className="text-brand-600" /> Case Volume Trend
-                            </h3>
-                            <div className="h-72 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id="colorCases" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2} />
-                                                <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                        <Area type="monotone" dataKey="cases" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#colorCases)" />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                        {/* ROW 1: NEW KPI CARDS */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            {/* A. Best Performing Product Type */}
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
+                                <div className="p-3 bg-blue-50 text-blue-600 rounded-full mb-3">
+                                    <Award size={24} />
+                                </div>
+                                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Best Performing Product</h3>
+                                <div className="mt-2">
+                                    <span className="text-2xl font-bold text-slate-800 block">{bestProduct[0]}</span>
+                                    <span className="text-sm font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full mt-1 inline-block">
+                                        {bestProduct[1]} Orders
+                                    </span>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* ROW 2: TOP DOCTORS */}
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
-                            <h3 className="font-bold text-slate-800 text-lg mb-6 flex items-center gap-2">
-                                <Award size={20} className="text-amber-500" /> Top Performing Doctors
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {topDoctors.length === 0 ? <p className="text-slate-400">No data available.</p> : topDoctors.map((doc, i) => (
-                                    <div key={doc.name} className="flex items-center gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-slate-200 text-slate-700' : i === 2 ? 'bg-orange-100 text-orange-800' : 'bg-white text-slate-500 border border-slate-200'}`}>
-                                            #{i + 1}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="font-bold text-slate-800 text-sm">{doc.name}</div>
-                                            <div className="text-xs text-slate-500 font-medium">{doc.count} cases submitted</div>
-                                        </div>
-                                        {i === 0 && <Award size={24} className="text-amber-400" />}
+                            {/* B. Best Turnaround Time */}
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
+                                <div className="p-3 bg-green-50 text-green-600 rounded-full mb-3">
+                                    <Clock size={24} />
+                                </div>
+                                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Best Turnaround Time</h3>
+                                <div className="mt-2">
+                                    <span className="text-xl font-bold text-slate-800 block">{bestTurnaroundProduct.name}</span>
+                                    <span className="text-sm font-medium text-slate-500">
+                                        Avg: {bestTurnaroundProduct.days === 0 ? '-' : bestTurnaroundProduct.days.toFixed(1)} Days
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* C. Best & Worst Months */}
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide text-center mb-4">Monthly Performance</h3>
+                                <div className="flex justify-between items-center w-full px-4 border-b border-slate-100 pb-2 mb-2">
+                                    <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                        <TrendingUp size={16} className="text-green-500" /> Best
+                                    </span>
+                                    <div className="text-right">
+                                        <div className="text-sm font-bold text-slate-800">{bestMonth[0]}</div>
+                                        <div className="text-xs text-slate-400">{bestMonth[1]} Orders</div>
                                     </div>
-                                ))}
+                                </div>
+                                <div className="flex justify-between items-center w-full px-4">
+                                    <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                        <TrendingUp size={16} className="text-red-500 rotate-180" /> Worst
+                                    </span>
+                                    <div className="text-right">
+                                        <div className="text-sm font-bold text-slate-800">{worstMonth[0]}</div>
+                                        <div className="text-xs text-slate-400">{worstMonth[1]} Orders</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -479,7 +480,7 @@ export const AdminDashboard: React.FC = () => {
                                                     <td className="px-6 py-4 text-slate-500 text-xs">{formatDate(order.submissionDate)}</td>
                                                     <td className="px-6 py-4 font-bold text-slate-900">{order.patientName}</td>
                                                     <td className="px-6 py-4 text-slate-700 font-medium">{order.doctorName}</td>
-                                                    <td className="px-6 py-4 text-xs font-medium text-slate-600 bg-slate-50/50 rounded-lg">{order.productType}</td>
+                                                    <td className="px-6 py-4 text-xs font-medium text-slate-600 bg-slate-50/50 rounded-lg">{order.productType || (order as any).typeOfWork || '-'}</td>
                                                     <td className="px-6 py-4 text-xs font-bold text-slate-700">{formatDate(order.dueDate)}</td>
                                                     <td className="px-6 py-4"><StatusBadge status={order.status} /></td>
                                                     <td className="px-6 py-4 text-right">
@@ -655,34 +656,40 @@ export const AdminDashboard: React.FC = () => {
                 )}
 
                 {activeTab === 'workload' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-80">
-                            <h3 className="text-lg font-bold text-slate-800 mb-4">Case Volume (Monthly)</h3>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={monthlyData}>
-                                    <defs>
-                                        <linearGradient id="colorCases" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1} />
-                                            <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                    <Area type="monotone" dataKey="cases" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#colorCases)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden mb-8">
+                        <div className="p-4 border-b border-slate-200 bg-slate-50">
+                            <h2 className="font-bold text-slate-800 text-lg">Technician Workload</h2>
                         </div>
-                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-80">
-                            <h3 className="text-lg font-bold text-slate-800 mb-4">Work Distribution</h3>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="100%" barSize={20} data={radialData}>
-                                    <RadialBar background dataKey="count" />
-                                    <Legend iconSize={10} layout="vertical" verticalAlign="middle" wrapperStyle={{ right: 0 }} />
-                                    <Tooltip />
-                                </RadialBarChart>
-                            </ResponsiveContainer>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-left text-slate-600">
+                                <thead className="bg-slate-100 font-bold text-slate-700 uppercase">
+                                    <tr>
+                                        <th className="px-4 py-3 border-b border-slate-200 sticky left-0 bg-slate-100">Technician Name</th>
+                                        <th className="px-4 py-3 border-b border-slate-200 text-center bg-blue-50 text-blue-800">Total Cases</th>
+                                        {Object.values(OrderStatus).map(status => (
+                                            <th key={status} className="px-2 py-3 border-b border-slate-200 text-center whitespace-nowrap min-w-[80px]">
+                                                {status}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {technicianWorkload.map(tech => (
+                                        <tr key={tech.name} className="hover:bg-slate-50">
+                                            <td className="px-4 py-3 font-bold text-slate-800 border-r border-slate-100 sticky left-0 bg-white">{tech.name}</td>
+                                            <td className="px-4 py-3 text-center font-bold text-blue-700 bg-blue-50/30">{tech.total}</td>
+                                            {Object.values(OrderStatus).map(status => (
+                                                <td key={status} className={`px-2 py-3 text-center ${tech[status] > 0 ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-300'}`}>
+                                                    {tech[status] > 0 ? tech[status] : '-'}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                    {technicianWorkload.length === 0 && (
+                                        <tr><td colSpan={Object.keys(OrderStatus).length + 2} className="text-center py-8 text-slate-400">No technicians found.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 )}

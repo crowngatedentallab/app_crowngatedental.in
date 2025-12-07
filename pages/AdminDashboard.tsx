@@ -18,6 +18,8 @@ export const AdminDashboard: React.FC = () => {
     const [newProductCode, setNewProductCode] = useState('');
     const [productSearchTerm, setProductSearchTerm] = useState('');
 
+    const [productCounters, setProductCounters] = useState<Record<string, number>>({});
+
     // MODAL STATE
     const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -49,6 +51,15 @@ export const AdminDashboard: React.FC = () => {
         setOrders(ordersData);
         setUsers(usersData);
         setProducts(productsData);
+
+        // Fetch Counters
+        const countersData = await Promise.all(productsData.map(async p => {
+            if (!p.code) return { code: 'N/A', count: 0 };
+            const count = await firestoreService.getCounter(p.code);
+            return { code: p.code, count };
+        }));
+        const newCounters = countersData.reduce((acc, curr) => ({ ...acc, [curr.code]: curr.count }), {} as Record<string, number>);
+        setProductCounters(newCounters);
     };
 
     const handleOrderUpdate = async (id: string, field: keyof Order, value: string) => {
@@ -96,6 +107,14 @@ export const AdminDashboard: React.FC = () => {
     const handleProductCodeUpdate = async (id: string, code: string) => {
         await firestoreService.updateProduct(id, { code: code.toUpperCase() });
         loadData();
+    };
+
+    const handleProductCounterUpdate = async (productCode: string, val: string) => {
+        const newSeq = parseInt(val, 10);
+        if (!isNaN(newSeq)) {
+            await firestoreService.updateCounter(productCode, newSeq);
+            loadData();
+        }
     };
 
     const handleUserUpdate = async (id: string, field: keyof User, value: string) => {
@@ -712,6 +731,14 @@ export const AdminDashboard: React.FC = () => {
                                                 value={product.code || 'N/A'}
                                                 onSave={(val) => handleProductCodeUpdate(product.id, val)}
                                                 className="font-mono bg-slate-100 px-2 rounded"
+                                            />
+                                        </div>
+                                        <div className="w-24">
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5" title="Last Order Sequence Number">Last Seq #</div>
+                                            <EditableField
+                                                value={(productCounters[product.code || ''] || 0).toString()}
+                                                onSave={(val) => handleProductCounterUpdate(product.code || '', val)}
+                                                className="font-mono bg-slate-100 px-2 rounded text-center"
                                             />
                                         </div>
                                         <button

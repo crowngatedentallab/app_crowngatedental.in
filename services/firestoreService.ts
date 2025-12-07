@@ -16,6 +16,18 @@ import {
 import { Order, User, Product, UserRole, OrderStatus } from "../types";
 
 export const firestoreService = {
+    // --- COUNTERS ---
+    getCounter: async (productCode: string): Promise<number> => {
+        const counterRef = doc(db, "counters", productCode);
+        const counterDoc = await getDoc(counterRef);
+        return counterDoc.exists() ? (counterDoc.data().lastSequence || 0) : 0;
+    },
+
+    updateCounter: async (productCode: string, newSequence: number): Promise<void> => {
+        const counterRef = doc(db, "counters", productCode);
+        await setDoc(counterRef, { lastSequence: newSequence }, { merge: true });
+    },
+
     // --- USERS ---
     getUsers: async (): Promise<User[]> => {
         const querySnapshot = await getDocs(collection(db, "users"));
@@ -105,7 +117,15 @@ export const firestoreService = {
                 transaction.set(counterRef, { lastSequence: nextSeq }, { merge: true });
 
                 // Format: ZC-0001
+                // User Request: If last was 432, next should be 433.
+                // We keep 4 digit padding for consistency, but if sequence > 9999 it expands.
                 const sequencePart = nextSeq.toString().padStart(4, '0');
+                if (productCode.includes('-')) {
+                    // If code already has hyphen e.g. "CPFM", we just append sequence.
+                    // But user typically wants "CPFM-0043".
+                    // If user complains about format "CPFM-433-0001", it means product code was "CPFM-433".
+                    // We should just produce `${productCode}-${sequencePart}`.
+                }
                 return `${productCode}-${sequencePart}`;
             });
 

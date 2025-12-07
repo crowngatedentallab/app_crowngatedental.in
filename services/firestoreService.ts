@@ -147,9 +147,69 @@ export const firestoreService = {
         }
     },
 
-    updateOrder: async (id: string, order: Partial<Order>): Promise<void> => {
+    updateOrder: async (id: string, updates: Partial<Order>): Promise<void> => {
+        // Check if we are updating the Product (Type of Work)
+        if (updates.typeOfWork) {
+            const orderRef = doc(db, "orders", id);
+            const orderSnap = await getDoc(orderRef);
+
+            if (orderSnap.exists()) {
+                const currentOrder = orderSnap.data() as Order;
+
+                // Only proceed if type effectively changed
+                if (currentOrder.typeOfWork !== updates.typeOfWork) {
+
+                    // 1. Find the new Product Code
+                    const productsQuery = query(collection(db, "products"), where("name", "==", updates.typeOfWork));
+                    const productSnap = await getDocs(productsQuery);
+
+                    if (!productSnap.empty) {
+                        const productCode = productSnap.docs[0].data().code;
+
+                        if (productCode) {
+                            // 2. Generate New ID via Transaction
+                            const counterRef = doc(db, "counters", productCode);
+                            let newOrderId = "";
+
+                            try {
+                                newOrderId = await runTransaction(db, async (transaction) => {
+                                    const counterDoc = await transaction.get(counterRef);
+                                    const currentSeq = counterDoc.exists() ? (counterDoc.data().lastSequence || 0) : 0;
+                                    const nextSeq = currentSeq + 1;
+                                    transaction.set(counterRef, { lastSequence: nextSeq }, { merge: true });
+
+                                    const sequencePart = nextSeq.toString().padStart(4, '0');
+                                    // See createOrder for note on format
+                                    return `${productCode}-${sequencePart}`;
+                                });
+
+                                // 3. Create New Document
+                                await setDoc(doc(db, "orders", newOrderId), {
+                                    ...currentOrder,
+                                    ...updates,
+                                    id: newOrderId // Update ID field
+                                });
+
+                                // 4. Delete Old Document
+                                await deleteDoc(orderRef);
+                                return; // Exit, we are done
+
+                            } catch (error) {
+                                console.error("Failed to regenerate Order ID:", error);
+                                // Fallback: just update the existing doc if generation fails? 
+                                // No, better to throw or let it fall through to normal update if critical.
+                                // But if transaction fails, we shouldn't update partially.
+                                throw error;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Standard Update (No ID change)
         const orderRef = doc(db, "orders", id);
-        await updateDoc(orderRef, order);
+        await updateDoc(orderRef, updates);
     },
 
     deleteOrder: async (id: string): Promise<void> => {

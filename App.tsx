@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, UserRole } from './types';
 import { authService } from './services/authService';
+import { firestoreService } from './services/firestoreService';
 import { Navbar } from './components/Navbar';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { DoctorDashboard } from './pages/DoctorDashboard';
@@ -14,6 +15,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize DB defaults (Admin user, Products)
+    firestoreService.initializeDefaults();
+
     // Check for existing session
     const savedUser = authService.getCurrentUser();
     if (savedUser) {
@@ -32,7 +36,7 @@ export default function App() {
   };
 
   if (loading) {
-      return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-400">Loading Portal...</div>;
+    return <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-400">Loading Portal...</div>;
   }
 
   // If not logged in, show Login Page
@@ -55,12 +59,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      <Navbar 
-        currentUser={currentUser} 
+      <Navbar
+        currentUser={currentUser}
         onLogout={handleLogout}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
-      
+
       <main className="relative pt-4">
         {renderView()}
       </main>

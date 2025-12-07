@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { authService } from '../services/authService';
 import { User } from '../types';
@@ -23,13 +22,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
     try {
       const user = await authService.login(username, password);
+      // The authService login now returns the user data directly query from Firebase
       if (user) {
-        onLoginSuccess(user);
+        // Ensure the returned object matches User type or map it if necessary
+        // Assuming Firebase user doc matches simple User interface
+        onLoginSuccess(user as User);
       } else {
         setError('Invalid username or password');
       }
     } catch (err) {
-      setError('System error. Please try again.');
+      console.error(err);
+      setError('Invalid username or password');
     } finally {
       setLoading(false);
     }

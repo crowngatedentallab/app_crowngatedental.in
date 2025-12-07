@@ -34,67 +34,54 @@ The system leverages **Google Sheets** as a flexible, zero-cost backend database
 
 ---
 
-## 3. Database Schema (Google Sheets)
-The backend consists of three primary sheets. Columns map directly to the application data models.
+## 3. Database Schema (Firebase Firestore)
+The backend uses **Firebase Firestore**, a NoSQL document database.
 
-### 📋 Orders Sheet
+### 📋 collection: `orders`
 Stores the core transactional data of the lab.
-| Column | Type | Description |
+| Field | Type | Description |
 | :--- | :--- | :--- |
-| `id` | String | Unique Identifier (e.g., ORD-001) |
+| `id` | String | Auto-generated Document ID |
 | `patientName` | String | Name of the patient |
 | `doctorName` | String | Full name of the prescribing doctor |
 | `clinicName` | String | Clinic associated with the doctor |
-| `toothNumber` | String | Comma-separated tooth numbers (e.g., "14, 15") |
-| `shade` | String | Visual shade reference (e.g., "A2") |
-| `typeOfWork` | String | Product type (e.g., "Zirconia Crown") |
-| `status` | Enum | Current stage (Submitted, Milling, Glazing, etc.) |
-| `submissionDate`| Date | ISO Date string YYYY-MM-DD |
-| `dueDate` | Date | Target delivery date |
+| `toothNumber` | String | Comma-separated tooth numbers |
+| `shade` | String | Visual shade reference |
+| `typeOfWork` | String | Product type |
+| `status` | String | Enum (Submitted, Milling, etc.) |
+| `submissionDate`| String | ISO Date string |
+| `dueDate` | String | Target delivery date |
 | `priority` | String | "Normal" or "Urgent" |
-| `assignedTech` | String | Name of the technician working on the case |
-| `notes` | String | Specific instructions |
+| `assignedTech` | String | Name of the technician |
+| `notes` | String | Instructions |
 
-### 👥 Users Sheet
-Manages authentication and role-based access.
-| Column | Type | Description |
+### 👥 collection: `users`
+| Field | Type | Description |
 | :--- | :--- | :--- |
-| `id` | String | Unique User ID (e.g., USR-001) |
+| `id` | String | Auto-generated Document ID |
 | `username` | String | Login username |
-| `password` | String | Login password (Plain text in MVP) |
-| `fullName` | String | Display name of the user |
-| `role` | Enum | `ADMIN`, `DOCTOR`, `TECHNICIAN` |
-| `relatedEntity` | String | Clinic Name (for Doctors) or Department |
+| `password` | String | Login password |
+| `fullName` | String | Display name |
+| `role` | String | `ADMIN`, `DOCTOR`, `TECHNICIAN` |
 
-### 📦 Products Sheet
-Configurable list of restoration types offered by the lab.
-| Column | Type | Description |
+### 📦 collection: `products`
+| Field | Type | Description |
 | :--- | :--- | :--- |
-| `id` | String | Unique Product ID (e.g., PROD-001) |
-| `name` | String | Display name (e.g., "E-Max Veneer") |
+| `id` | String | Auto-generated Document ID |
+| `name` | String | Product Name |
 
 ---
 
-## 4. System Logics & Workflows
+## 4. System Logics
 
-### Authentication Flow
-1.  User enters credentials on Login Screen.
-2.  System checks local MOCK data or calls Google Sheets API (if configured).
-3.  On success, user object is stored in LocalStorage.
-4.  **Router Guard**: Validates `user.role` to determine redirect:
-    *   `ADMIN` -> `/admin`
-    *   `TECHNICIAN` -> `/tech`
-    *   `DOCTOR` -> `/doctor`
+### Authentication
+*   **Login**: Validates against `users` collection in Firestore.
+*   **Session**: JSON object stored in `localStorage` ('crowngate_user').
 
-### Data Synchronization (Optimistic UI)
-*   **Reads**: Fetched once on component mount. Admin can trigger manual "Sync Sheets".
-*   **Writes**: Updates are applied to the local state **immediately** for instant feedback, then sent asynchronously to the Google Apps Script backend.
-*   **Mock Fallback**: If `GOOGLE_SCRIPT_URL` is missing, the app seamlessly falls back to `mockData.ts` for demonstration.
-
-### Technician Assignment Logic
-*   **Dropdown Population**: The Admin Dashboard filters the `Users` list for anyone with `role === TECHNICIAN`.
-*   **Assignment**: Selecting a name updates the `assignedTech` field on the specific `Order`.
-*   **Workload View**: The "Workload" tab groups orders by `assignedTech` to calculate active case counts and visualize capacity.
+### Data Strategy
+*   **Firestore**: Primary source of truth.
+*   **Storage**: Firebase Storage used for file uploads (future).
+*   **Direct Access**: Services communicate directly with Firebase SDK.
 
 ---
 

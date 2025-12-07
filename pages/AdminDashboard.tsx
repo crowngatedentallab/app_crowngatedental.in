@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { sheetService } from '../services/sheetService';
+import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User, Product, UserRole } from '../types';
 import { EditableField } from '../components/EditableField';
 import { Modal } from '../components/Modal';
@@ -26,68 +26,79 @@ export const AdminDashboard: React.FC = () => {
     const [filterStatus, setFilterStatus] = useState('All');
 
     useEffect(() => {
-        loadData();
-        const unsubscribe = sheetService.subscribe(loadData);
-        return unsubscribe;
+        const init = async () => {
+            setLoading(true);
+            await firestoreService.initializeDefaults();
+            await loadData();
+            setLoading(false);
+        };
+        init();
     }, []);
 
     const loadData = async () => {
-        setLoading(true);
         const [ordersData, usersData, productsData] = await Promise.all([
-            sheetService.getOrders(),
-            sheetService.getUsers(),
-            sheetService.getProducts()
+            firestoreService.getOrders(),
+            firestoreService.getUsers(),
+            firestoreService.getProducts()
         ]);
         setOrders(ordersData);
         setUsers(usersData);
         setProducts(productsData);
-        setLoading(false);
     };
 
     const handleOrderUpdate = async (id: string, field: keyof Order, value: string) => {
-        await sheetService.updateOrder(id, { [field]: value });
+        await firestoreService.updateOrder(id, { [field]: value });
+        loadData();
     };
 
     const handleOrderDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this order?')) {
-            await sheetService.deleteOrder(id);
+            await firestoreService.deleteOrder(id);
+            loadData();
         }
     };
 
     const handleAddProduct = async () => {
         if (!newProductName.trim()) return;
-        await sheetService.addProduct(newProductName);
+        await firestoreService.createProduct({ name: newProductName });
         setNewProductName('');
+        loadData();
     };
 
     const handleDeleteProduct = async (id: string) => {
         if (confirm('Delete this restoration type?')) {
-            await sheetService.deleteProduct(id);
+            await firestoreService.deleteProduct(id);
+            loadData();
         }
     };
 
     const handleAddOrder = async (orderData: any) => {
-        await sheetService.addOrder(orderData);
+        await firestoreService.createOrder(orderData);
         setIsOrderModalOpen(false);
+        loadData();
     };
 
     const handleProductUpdate = async (id: string, name: string) => {
-        await sheetService.updateProduct(id, name);
+        await firestoreService.updateProduct(id, { name });
+        loadData();
     };
 
     const handleUserUpdate = async (id: string, field: keyof User, value: string) => {
-        await sheetService.updateUser(id, { [field]: value });
+        await firestoreService.updateUser(id, { [field]: value });
+        loadData();
     };
 
     const handleUserDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this user?')) {
-            await sheetService.deleteUser(id);
+            await firestoreService.deleteUser(id);
+            loadData();
         }
     };
 
     const handleAddUser = async (userData: any) => {
-        await sheetService.addUser(userData);
+        await firestoreService.createUser(userData);
         setIsUserModalOpen(false);
+        loadData();
     };
 
     // --- FILTER LOGIC ---

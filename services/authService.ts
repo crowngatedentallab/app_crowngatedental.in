@@ -1,28 +1,42 @@
 
-import { sheetService } from './sheetService';
-import { User } from '../types';
+import { db } from "../firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { User } from "../types";
 
 export const authService = {
   login: async (username: string, password: string): Promise<User | null> => {
-    const users = await sheetService.getUsers();
-    
-    // In a real app, do NOT store plain text passwords. This is for the demo/sheet prototype only.
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-    
-    if (user) {
-      // Persist session
-      sessionStorage.setItem('crowngate_user', JSON.stringify(user));
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(
+        usersRef,
+        where("username", "==", username),
+        where("password", "==", password)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        return null;
+      }
+
+      // Add ID to data if missing, logic depends on firestore data structure
+      const data = snapshot.docs[0].data();
+      const user = { id: snapshot.docs[0].id, ...data } as User;
+
+      localStorage.setItem('crowngate_user', JSON.stringify(user));
       return user;
+    } catch (error) {
+      console.error("Login Error:", error);
+      throw error;
     }
-    return null;
   },
 
   logout: () => {
-    sessionStorage.removeItem('crowngate_user');
+    localStorage.removeItem('crowngate_user');
   },
 
   getCurrentUser: (): User | null => {
-    const stored = sessionStorage.getItem('crowngate_user');
+    const stored = localStorage.getItem('crowngate_user');
     return stored ? JSON.parse(stored) : null;
   }
 };

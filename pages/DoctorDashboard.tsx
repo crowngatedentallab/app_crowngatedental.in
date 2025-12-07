@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { sheetService } from '../services/sheetService';
+import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User, Product } from '../types';
 import { Plus, Calendar, FileText, Lock, Loader2 } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
@@ -26,24 +26,23 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
 
   useEffect(() => {
     loadData();
-    const unsubscribe = sheetService.subscribe(loadData);
-    return unsubscribe;
+    // Realtime subscription removed for MVP
   }, [user]);
 
   const loadData = async () => {
     const [allOrders, allProducts] = await Promise.all([
-        sheetService.getOrders(),
-        sheetService.getProducts()
+      firestoreService.getOrders(),
+      firestoreService.getProducts()
     ]);
-    
+
     // STRICT FILTER: Only show orders where doctorName matches the logged-in user
     const myOrders = allOrders.filter(o => o.doctorName === user.fullName);
-    setOrders(myOrders); 
+    setOrders(myOrders);
     setProducts(allProducts);
 
     // Set default product if none selected
     if (allProducts.length > 0 && !formData.typeOfWork) {
-        setFormData(prev => ({ ...prev, typeOfWork: allProducts[0].name }));
+      setFormData(prev => ({ ...prev, typeOfWork: allProducts[0].name }));
     }
   };
 
@@ -52,18 +51,20 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
-    
+
     try {
-        await sheetService.addOrder({
+      await firestoreService.createOrder({
         ...formData,
         typeOfWork: formData.typeOfWork || (products[0]?.name || 'Standard Crown'),
         doctorName: user.fullName, // Enforce correct doctor name from Auth
         clinicName: user.relatedEntity // Enforce clinic name from Auth
-        });
-        
-        setShowForm(false);
-        // Reset form
-        setFormData({
+      });
+
+      loadData(); // Reload logic
+
+      setShowForm(false);
+      // Reset form
+      setFormData({
         patientName: '',
         toothNumber: '',
         typeOfWork: products[0]?.name || '',
@@ -71,11 +72,11 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
         dueDate: '',
         notes: '',
         priority: 'Normal'
-        });
+      });
     } catch (error) {
-        console.error("Submission failed", error);
+      console.error("Submission failed", error);
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -93,7 +94,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8 mt-16">
-      
+
       {/* Clinic Header */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-200 pb-6">
         <div>
@@ -102,7 +103,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
             <Lock size={12} /> {user.relatedEntity || 'Secure Portal'} • Authenticated
           </p>
         </div>
-        <button 
+        <button
           onClick={() => setShowForm(!showForm)}
           disabled={isSubmitting}
           className="flex items-center space-x-2 bg-brand-800 hover:bg-brand-900 text-white px-5 py-2.5 rounded shadow-md transition-all font-medium text-sm disabled:opacity-50"
@@ -115,50 +116,50 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
       {/* New Order Form */}
       {showForm && (
         <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-xl animate-in fade-in slide-in-from-top-4 relative">
-            <button 
-                onClick={() => !isSubmitting && setShowForm(false)} 
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 disabled:opacity-50"
-                disabled={isSubmitting}
-            >
-                Cancel
-            </button>
-            
-            <div className="flex items-center gap-2 mb-6 text-brand-800 border-b border-slate-100 pb-2">
-                <FileText size={20} />
-                <h2 className="text-lg font-bold">New Work Authorization</h2>
-            </div>
-            
+          <button
+            onClick={() => !isSubmitting && setShowForm(false)}
+            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 disabled:opacity-50"
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+
+          <div className="flex items-center gap-2 mb-6 text-brand-800 border-b border-slate-100 pb-2">
+            <FileText size={20} />
+            <h2 className="text-lg font-bold">New Work Authorization</h2>
+          </div>
+
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div>
               <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Doctor</label>
-              <input 
+              <input
                 disabled
-                type="text" 
+                type="text"
                 value={user.fullName}
                 className="w-full bg-slate-100 border border-slate-200 rounded p-2.5 text-slate-500 cursor-not-allowed"
               />
             </div>
-             <div>
+            <div>
               <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Patient Name <span className="text-red-500">*</span></label>
-              <input 
+              <input
                 required
-                type="text" 
+                type="text"
                 placeholder="Last Name, First Name"
                 className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:ring-1 focus:ring-brand-600 focus:outline-none transition-all"
                 value={formData.patientName}
-                onChange={e => setFormData({...formData, patientName: e.target.value})}
+                onChange={e => setFormData({ ...formData, patientName: e.target.value })}
               />
             </div>
             <div>
               <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Required Date <span className="text-red-500">*</span></label>
               <div className="relative">
-                <input 
-                    required
-                    type="date" 
-                    min={today}
-                    className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none appearance-none"
-                    value={formData.dueDate}
-                    onChange={e => setFormData({...formData, dueDate: e.target.value})}
+                <input
+                  required
+                  type="date"
+                  min={today}
+                  className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none appearance-none"
+                  value={formData.dueDate}
+                  onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
                 />
                 {/* Calendar icon pointer-events-none ensures clicking icon passes through to input */}
                 <Calendar className="absolute right-3 top-2.5 text-slate-400 pointer-events-none" size={18} />
@@ -166,46 +167,46 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
             </div>
             <div>
               <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Tooth #</label>
-              <input 
+              <input
                 placeholder="e.g. 11, 21"
-                type="text" 
+                type="text"
                 className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none"
                 value={formData.toothNumber}
-                onChange={e => setFormData({...formData, toothNumber: e.target.value})}
+                onChange={e => setFormData({ ...formData, toothNumber: e.target.value })}
               />
             </div>
             <div>
               <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Shade</label>
-              <input 
+              <input
                 placeholder="e.g. A2"
-                type="text" 
+                type="text"
                 className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none"
                 value={formData.shade}
-                onChange={e => setFormData({...formData, shade: e.target.value})}
+                onChange={e => setFormData({ ...formData, shade: e.target.value })}
               />
             </div>
             <div>
               <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Restoration Type</label>
-              <select 
+              <select
                 className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none"
                 value={formData.typeOfWork}
-                onChange={e => setFormData({...formData, typeOfWork: e.target.value})}
+                onChange={e => setFormData({ ...formData, typeOfWork: e.target.value })}
               >
                 {products.length === 0 ? (
-                    <option>Loading types...</option>
+                  <option>Loading types...</option>
                 ) : (
-                    products.map(prod => (
-                        <option key={prod.id} value={prod.name}>{prod.name}</option>
-                    ))
+                  products.map(prod => (
+                    <option key={prod.id} value={prod.name}>{prod.name}</option>
+                  ))
                 )}
               </select>
             </div>
             <div>
               <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Case Priority</label>
-              <select 
+              <select
                 className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none"
                 value={formData.priority}
-                onChange={e => setFormData({...formData, priority: e.target.value as 'Normal' | 'Urgent'})}
+                onChange={e => setFormData({ ...formData, priority: e.target.value as 'Normal' | 'Urgent' })}
               >
                 <option value="Normal">Standard</option>
                 <option value="Urgent">Rush (Urgent)</option>
@@ -213,22 +214,22 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
             </div>
             <div className="md:col-span-2">
               <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Clinical Notes / Instructions</label>
-              <textarea 
+              <textarea
                 className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none h-24 resize-none"
                 value={formData.notes}
-                onChange={e => setFormData({...formData, notes: e.target.value})}
+                onChange={e => setFormData({ ...formData, notes: e.target.value })}
               />
             </div>
             <div className="md:col-span-2 flex justify-end space-x-4 pt-4 border-t border-slate-100">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setShowForm(false)}
                 disabled={isSubmitting}
                 className="px-6 py-2.5 text-slate-600 hover:text-slate-900 text-sm font-medium disabled:opacity-50"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 type="submit"
                 disabled={isSubmitting}
                 className="px-8 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded shadow-sm text-sm font-bold uppercase tracking-wide flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
@@ -247,9 +248,9 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
           My Active Cases
         </h3>
         {orders.length === 0 ? (
-            <div className="bg-white border border-slate-200 p-12 text-center rounded-lg">
-                <p className="text-slate-400">No active cases found for {user.fullName}.</p>
-            </div>
+          <div className="bg-white border border-slate-200 p-12 text-center rounded-lg">
+            <p className="text-slate-400">No active cases found for {user.fullName}.</p>
+          </div>
         ) : (
           orders.map(order => (
             <div key={order.id} className="bg-white border border-slate-200 p-5 rounded-lg hover:shadow-md transition-shadow group">
@@ -265,24 +266,24 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
                   <div className="text-sm text-slate-500 flex flex-wrap gap-x-6 gap-y-1 mt-2">
                     <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>Tooth #{order.toothNumber || '-'}</span>
                     <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>{order.typeOfWork}</span>
-                    <span className="flex items-center gap-1 text-brand-700 font-medium"><Calendar size={12}/> Due: {formatDate(order.dueDate)}</span>
+                    <span className="flex items-center gap-1 text-brand-700 font-medium"><Calendar size={12} /> Due: {formatDate(order.dueDate)}</span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-slate-100 pt-3 md:pt-0 mt-2 md:mt-0">
                   {/* Status Timeline */}
                   <div className="hidden lg:flex flex-col items-end gap-1">
-                     <span className="text-[10px] text-slate-400 uppercase tracking-widest">Stage</span>
-                     <div className="flex items-center gap-1">
-                        {[OrderStatus.SUBMITTED, OrderStatus.DESIGNING, OrderStatus.MILLING, OrderStatus.GLAZING, OrderStatus.DISPATCHED].map((step, idx) => {
-                            const currentIdx = Object.values(OrderStatus).indexOf(order.status);
-                            const stepIdx = Object.values(OrderStatus).indexOf(step);
-                            const isCompleted = currentIdx >= stepIdx;
-                            return (
-                                <div key={step} className={`h-1 w-6 rounded-full ${isCompleted ? 'bg-brand-600' : 'bg-slate-200'}`} />
-                            );
-                        })}
-                     </div>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Stage</span>
+                    <div className="flex items-center gap-1">
+                      {[OrderStatus.SUBMITTED, OrderStatus.DESIGNING, OrderStatus.MILLING, OrderStatus.GLAZING, OrderStatus.DISPATCHED].map((step, idx) => {
+                        const currentIdx = Object.values(OrderStatus).indexOf(order.status);
+                        const stepIdx = Object.values(OrderStatus).indexOf(step);
+                        const isCompleted = currentIdx >= stepIdx;
+                        return (
+                          <div key={step} className={`h-1 w-6 rounded-full ${isCompleted ? 'bg-brand-600' : 'bg-slate-200'}`} />
+                        );
+                      })}
+                    </div>
                   </div>
 
                   <div className="text-right">

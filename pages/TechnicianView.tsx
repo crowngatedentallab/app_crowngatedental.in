@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { sheetService } from '../services/sheetService';
+import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User } from '../types';
 import { ArrowRight, CheckCircle2, Lock, GitCompareArrows } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
@@ -19,19 +19,17 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
 
   useEffect(() => {
     loadOrders();
-    const unsubscribe = sheetService.subscribe(loadOrders);
-    return unsubscribe;
+    // Realtime subscription removed for MVP migration
   }, [user]);
 
   const loadOrders = async () => {
-    const all = await sheetService.getOrders();
-    // STRICT FILTER: Only show orders assigned to the logged-in technician
-    // Or if Unassigned (technicians should probably pick up unassigned work too)
+    // Get orders assigned to me
+    // firestoreService.getOrdersByRole would be ideal but currently logic is mixed
+    const all = await firestoreService.getOrders();
     const myWork = all.filter(o => o.assignedTech === user.fullName);
     setOrders(myWork);
 
-    const users = await sheetService.getUsers();
-    // Filter for technicians, but exclude current user if you only want to see OTHERS (though seeing self is fine)
+    const users = await firestoreService.getUsers();
     setTechnicians(users.filter(u => u.role === 'TECHNICIAN'));
   };
 
@@ -42,10 +40,9 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
 
   const handleActionSubmit = async (updates: Partial<Order>) => {
     if (selectedOrder) {
-      await sheetService.updateOrder(selectedOrder.id, updates);
+      await firestoreService.updateOrder(selectedOrder.id, updates);
       setIsModalOpen(false);
       setSelectedOrder(null);
-      // Optimistic update handled by subscription usually, but we can force reload
       loadOrders();
     }
   };

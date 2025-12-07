@@ -343,7 +343,7 @@ export const AdminDashboard: React.FC = () => {
     return (
         <div className="pb-20 md:pb-0 min-h-screen bg-slate-50/50">
             {/* Header / Control Bar (Sticky on Desktop) */}
-            <div className="bg-white/80 backdrop-blur-md border border-white/20 px-4 md:px-8 py-4 mb-4 md:mb-8 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shadow-sm sticky top-16 z-30">
+            <div className="bg-white/80 backdrop-blur-md border border-white/20 px-4 md:px-8 py-3 mb-2 md:mb-4 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shadow-sm sticky top-16 z-30">
                 <div>
                     <h1 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-700 to-brand-500">
                         {activeTab === 'orders' ? 'Order Management' :
@@ -378,13 +378,13 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
 
-            <div className="px-4 md:px-8 space-y-6">
+            <div className="px-4 md:px-8 space-y-4">
                 {activeTab === 'orders' && (
                     <>
                         {/* NEW DASHBOARD LAYOUT */}
 
                         {/* ROW 1: NEW KPI CARDS */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                             {/* A. Best Performing Product Type */}
                             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
                                 <div className="p-3 bg-blue-50 text-blue-600 rounded-full mb-3">
@@ -413,7 +413,7 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* C. Best & Worst Months */}
+                            {/* C. Monthly Performance */}
                             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
                                 <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide text-center mb-4">Monthly Performance</h3>
                                 <div className="flex justify-between items-center w-full px-4 border-b border-slate-100 pb-2 mb-2">
@@ -433,6 +433,29 @@ export const AdminDashboard: React.FC = () => {
                                         <div className="text-sm font-bold text-slate-800">{worstMonth[0]}</div>
                                         <div className="text-xs text-slate-400">{worstMonth[1]} Orders</div>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* D. Top Doctor / Clinic (NEW) */}
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
+                                <div className="p-3 bg-purple-50 text-purple-600 rounded-full mb-3">
+                                    <Users size={24} />
+                                </div>
+                                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Top Doctor</h3>
+                                <div className="mt-2">
+                                    {topDoctors[0] ? (
+                                        <>
+                                            <span className="text-lg font-bold text-slate-800 block truncate max-w-[180px]">{topDoctors[0].name}</span>
+                                            <span className="text-xs text-slate-400 block mb-1">
+                                                {users.find(u => u.fullName === topDoctors[0].name)?.relatedEntity || 'Private Clinic'}
+                                            </span>
+                                            <span className="text-sm font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full mt-1 inline-block">
+                                                {topDoctors[0].count} Orders
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span className="text-slate-400 font-medium">No Data</span>
+                                    )}
                                 </div>
                             </div>
                         </div>

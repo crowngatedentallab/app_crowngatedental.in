@@ -23,10 +23,12 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
   }, [user]);
 
   const loadOrders = async () => {
-    // Get orders assigned to me
-    // firestoreService.getOrdersByRole would be ideal but currently logic is mixed
+    // Get orders where I am assigned OR I was previously assigned
     const all = await firestoreService.getOrders();
-    const myWork = all.filter(o => o.assignedTech === user.fullName);
+    const myWork = all.filter(o =>
+      o.assignedTech === user.fullName ||
+      (o.technicianHistory && o.technicianHistory.includes(user.fullName))
+    );
     setOrders(myWork);
 
     const users = await firestoreService.getUsers();
@@ -47,11 +49,8 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
     }
   };
 
-
-
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
-    // Expects YYYY-MM-DD from sheetService normalization
     const parts = dateString.split('-');
     if (parts.length === 3) {
       return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
@@ -59,8 +58,19 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
     return dateString;
   };
 
-  const todoOrders = orders.filter(o => o.status !== OrderStatus.DELIVERED && o.status !== OrderStatus.DISPATCHED);
-  const completedOrders = orders.filter(o => o.status === OrderStatus.DELIVERED || o.status === OrderStatus.DISPATCHED);
+  // Todo: Assigned to me AND not completed
+  const todoOrders = orders.filter(o =>
+    o.assignedTech === user.fullName &&
+    o.status !== OrderStatus.DELIVERED &&
+    o.status !== OrderStatus.DISPATCHED
+  );
+
+  // History: (Completed) OR (Assigned to someone else but I worked on it)
+  const completedOrders = orders.filter(o =>
+    o.status === OrderStatus.DELIVERED ||
+    o.status === OrderStatus.DISPATCHED ||
+    (o.assignedTech !== user.fullName && o.technicianHistory?.includes(user.fullName))
+  );
 
   const displayedOrders = activeTab === 'todo' ? todoOrders : completedOrders;
 

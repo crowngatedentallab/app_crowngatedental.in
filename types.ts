@@ -46,6 +46,7 @@ export interface Order {
   dueDate: string;
   notes?: string;
   assignedTech?: string; // Links to User.fullName
+  technicianHistory?: string[]; // List of all technicians who worked on this
   priority: 'Normal' | 'Urgent';
   attachments?: string[]; // URLs of uploaded files
 }

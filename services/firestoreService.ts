@@ -11,7 +11,8 @@ import {
     where,
     getDoc,
     setDoc,
-    runTransaction
+    runTransaction,
+    arrayUnion
 } from "firebase/firestore";
 import { Order, User, Product, UserRole, OrderStatus } from "../types";
 
@@ -130,14 +131,14 @@ export const firestoreService = {
             });
 
             // 3. Save Order with generated ID
-            // We use setDoc with specific ID instead of addDoc (which generates random ID)
-            // Wait, the Requirement says "Save generated order ID into orders collection".
-            // Typically Firestore ID is the document ID. Let's use the nice ID as the Doc ID too!
-            // It makes looking up orders easier.
-            await setDoc(doc(db, "orders", newOrderId), {
+            const newOrderData: Order = {
                 ...order,
-                id: newOrderId // Ensure ID is part of data too
-            });
+                id: newOrderId,
+                submissionDate: order.submissionDate || new Date().toISOString().split('T')[0], // Ensure YYYY-MM-DD
+                technicianHistory: order.assignedTech ? [order.assignedTech] : []
+            };
+
+            await setDoc(doc(db, "orders", newOrderId), newOrderData);
 
             return newOrderId;
 
@@ -209,7 +210,13 @@ export const firestoreService = {
 
         // Standard Update (No ID change)
         const orderRef = doc(db, "orders", id);
-        await updateDoc(orderRef, updates);
+
+        const finalUpdates: any = { ...updates };
+        if (updates.assignedTech) {
+            finalUpdates.technicianHistory = arrayUnion(updates.assignedTech);
+        }
+
+        await updateDoc(orderRef, finalUpdates);
     },
 
     deleteOrder: async (id: string): Promise<void> => {

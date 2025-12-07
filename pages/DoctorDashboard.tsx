@@ -18,7 +18,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
   const [formData, setFormData] = useState({
     patientName: '',
     toothNumber: '',
-    typeOfWork: '', // Will default to first product
+    productType: '', // Will default to first product
     shade: '',
     dueDate: '',
     notes: '',
@@ -42,8 +42,8 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
     setProducts(allProducts);
 
     // Set default product if none selected
-    if (allProducts.length > 0 && !formData.typeOfWork) {
-      setFormData(prev => ({ ...prev, typeOfWork: allProducts[0].name }));
+    if (allProducts.length > 0 && !formData.productType) {
+      setFormData(prev => ({ ...prev, productType: allProducts[0].name }));
     }
   };
 
@@ -56,7 +56,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
     try {
       await firestoreService.createOrder({
         ...formData,
-        typeOfWork: formData.typeOfWork || (products[0]?.name || 'Standard Crown'),
+        productType: formData.productType || (products[0]?.name || 'Standard Crown'),
         doctorName: user.fullName, // Enforce correct doctor name from Auth
         clinicName: user.relatedEntity // Enforce clinic name from Auth
       });
@@ -68,7 +68,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
       setFormData({
         patientName: '',
         toothNumber: '',
-        typeOfWork: products[0]?.name || '',
+        productType: products[0]?.name || '',
         shade: '',
         dueDate: '',
         notes: '',
@@ -173,7 +173,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
                 <div>
                   <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Restoration Type</label>
                   <select className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
-                    value={formData.typeOfWork} onChange={e => setFormData({ ...formData, typeOfWork: e.target.value })}>
+                    value={formData.productType} onChange={e => setFormData({ ...formData, productType: e.target.value })}>
                     {products.length === 0 ? <option>Loading types...</option> :
                       products.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                   </select>
@@ -224,7 +224,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
                 <div>
                   <span className="text-xs font-mono text-slate-400 block mb-1">#{order.id}</span>
                   <h3 className="font-bold text-slate-900 text-lg leading-tight">{order.patientName}</h3>
-                  <div className="text-sm text-slate-500 font-medium">{order.typeOfWork}</div>
+                  <div className="text-sm text-slate-500 font-medium">{order.productType}</div>
                 </div>
                 <StatusBadge status={order.status} />
               </div>

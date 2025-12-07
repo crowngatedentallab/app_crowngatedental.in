@@ -142,7 +142,7 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
                   <h3 className="font-bold text-slate-900 text-lg leading-tight">{order.patientName}</h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs font-mono text-slate-400 bg-slate-50 px-1 rounded">#{order.id}</span>
-                    <span className="text-xs font-medium text-slate-600">{order.typeOfWork}</span>
+                    <span className="text-xs font-medium text-slate-600">{order.productType}</span>
                   </div>
                 </div>
                 <StatusBadge status={order.status} />

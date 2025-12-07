@@ -28,7 +28,7 @@ export const CaseActionForm: React.FC<CaseActionFormProps> = ({ order, technicia
         <form onSubmit={handleSubmit} className="space-y-6">
             <div className="bg-slate-50 p-3 rounded border border-slate-100 mb-4">
                 <p className="text-xs text-slate-500 uppercase font-bold">Current Case</p>
-                <p className="font-medium text-slate-800">{order.typeOfWork} for {order.patientName}</p>
+                <p className="font-medium text-slate-800">{order.productType} for {order.patientName}</p>
             </div>
 
             <div>

@@ -48,7 +48,7 @@ export interface Order {
   clinicName?: string;
   toothNumber: string;
   shade: string;
-  typeOfWork: string; // e.g., Zirconia, E-Max
+  productType: string; // e.g., Zirconia, E-Max
   status: OrderStatus;
   submissionDate: string;
   dueDate: string;

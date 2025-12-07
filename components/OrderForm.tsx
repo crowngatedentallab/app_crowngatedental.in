@@ -21,7 +21,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
         clinicName: initialData?.clinicName || '',
         toothNumber: initialData?.toothNumber || '',
         shade: initialData?.shade || '',
-        typeOfWork: initialData?.typeOfWork || '',
+        productType: initialData?.productType || '',
         dueDate: initialData?.dueDate || '',
         notes: initialData?.notes || '',
         priority: (initialData?.priority || 'Normal') as 'Normal' | 'Urgent',
@@ -106,8 +106,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                     <select
                         required
                         className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white"
-                        value={formData.typeOfWork}
-                        onChange={e => setFormData({ ...formData, typeOfWork: e.target.value })}
+                        value={formData.productType}
+                        onChange={e => setFormData({ ...formData, productType: e.target.value })}
                     >
                         <option value="">Select Restoration Type...</option>
                         {products.map(p => (

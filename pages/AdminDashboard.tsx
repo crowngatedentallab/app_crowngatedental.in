@@ -202,7 +202,7 @@ export const AdminDashboard: React.FC = () => {
 
     // --- FILTER LOGIC ---
     const filteredOrders = orders.filter(order => {
-        const matchType = filterType === 'All' || order.typeOfWork === filterType;
+        const matchType = filterType === 'All' || order.productType === filterType;
         const matchDoctor = filterDoctor === 'All' || order.doctorName === filterDoctor;
         const matchStatus = filterStatus === 'All' || order.status === filterStatus;
         const matchSearch = !orderSearch ||
@@ -245,7 +245,7 @@ export const AdminDashboard: React.FC = () => {
     // 3. Product Distribution
     const productData = products.map(p => ({
         name: p.name,
-        value: orders.filter(o => o.typeOfWork === p.name).length
+        value: orders.filter(o => o.productType === p.name).length
     })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
 
     // 4. Top Doctors
@@ -356,203 +356,136 @@ export const AdminDashboard: React.FC = () => {
             <div className="px-4 md:px-8 space-y-6">
                 {activeTab === 'orders' && (
                     <>
-                        {/* STATS CARDS */}
-                        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                                <div className="flex justify-between items-start">
-                                    <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">Today</p>
-                                    <div className="text-amber-600"><Calendar size={16} md:size={20} /></div>
-                                </div>
-                                <p className="text-xl md:text-2xl font-black text-amber-600 mt-2">{todaysCount}</p>
-                            </div>
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                                <div className="flex justify-between items-start">
-                                    <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">Active</p>
-                                    <div className="text-brand-600"><CheckSquare size={16} md:size={20} /></div>
-                                </div>
-                                <p className="text-xl md:text-2xl font-black text-slate-800 mt-2">{activeCount}</p>
-                            </div>
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                                <div className="flex justify-between items-start">
-                                    <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">Speed</p>
-                                    <div className="text-indigo-600"><Clock size={16} md:size={20} /></div>
-                                </div>
-                                <p className="text-xl md:text-2xl font-black text-indigo-600 mt-2">{avgTurnaround}</p>
-                            </div>
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                                <div className="flex justify-between items-start">
-                                    <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">Urgents</p>
-                                    <div className="text-red-600"><AlertTriangle size={16} md:size={20} /></div>
-                                </div>
-                                <p className="text-xl md:text-2xl font-black text-red-600 mt-2">{orders.filter(o => o.priority === 'Urgent').length}</p>
+                        {/* NEW DASHBOARD LAYOUT */}
+
+                        {/* ROW 1: MONTHLY TREND */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+                            <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
+                                <TrendingUp size={20} className="text-brand-600" /> Case Volume Trend
+                            </h3>
+                            <div className="h-72 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorCases" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                        <Area type="monotone" dataKey="cases" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#colorCases)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
 
-                        {/* CHARTS ROW 1 */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* STATUS BREAKDOWN */}
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                                <h3 className="font-bold text-slate-700 mb-4 text-sm uppercase">Production Load</h3>
-                                <div className="h-64">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={statusData.filter(d => d.count > 0)}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <XAxis dataKey="name" fontSize={10} angle={-45} textAnchor="end" height={60} />
-                                            <YAxis fontSize={12} allowDecimals={false} />
-                                            <Tooltip content={<CustomTooltip />} />
-                                            <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-
-                            {/* PRODUCT VOLUME */}
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                                <h3 className="font-bold text-slate-700 mb-4 text-sm uppercase">Product Volume</h3>
-                                <div className="h-64">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <RadialBarChart innerRadius="20%" outerRadius="100%" data={radialData} startAngle={180} endAngle={0} cx="50%" cy="70%">
-                                            <RadialBar label={{ position: 'insideStart', fill: '#fff', fontSize: 10 }} background dataKey="count" cornerRadius={10} />
-                                            <Legend iconSize={10} width={120} height={140} layout="vertical" verticalAlign="middle" wrapperStyle={{ top: 0, left: 0, lineHeight: '24px' }} />
-                                            <Tooltip />
-                                        </RadialBarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* CHARTS ROW 2 */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* MONTHLY TREND */}
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                                <h3 className="font-bold text-slate-700 mb-4 text-sm uppercase">Monthly Trend</h3>
-                                <div className="h-64">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={monthlyData}>
-                                            <defs>
-                                                <linearGradient id="colorCases" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <XAxis dataKey="name" fontSize={12} />
-                                            <YAxis fontSize={12} />
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <Tooltip />
-                                            <Area type="monotone" dataKey="cases" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorCases)" />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-
-                            {/* DOCTOR PERFORMANCE */}
-                            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                                <h3 className="font-bold text-slate-700 mb-4 text-sm uppercase">Top Doctors</h3>
-                                <div className="space-y-3">
-                                    {topDoctors.length === 0 ? <p className="text-center text-slate-400 text-sm py-10">No data</p> : topDoctors.map((doc, i) => (
-                                        <div key={doc.name} className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                                                    {i + 1}
-                                                </div>
-                                                <span className="text-sm font-medium text-slate-700">{doc.name}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-brand-500 rounded-full" style={{ width: `${(doc.count / topDoctors[0].count) * 100}%` }} />
-                                                </div>
-                                                <span className="text-xs font-bold text-slate-600 w-6 text-right">{doc.count}</span>
-                                            </div>
+                        {/* ROW 2: TOP DOCTORS */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+                            <h3 className="font-bold text-slate-800 text-lg mb-6 flex items-center gap-2">
+                                <Award size={20} className="text-amber-500" /> Top Performing Doctors
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {topDoctors.length === 0 ? <p className="text-slate-400">No data available.</p> : topDoctors.map((doc, i) => (
+                                    <div key={doc.name} className="flex items-center gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-slate-200 text-slate-700' : i === 2 ? 'bg-orange-100 text-orange-800' : 'bg-white text-slate-500 border border-slate-200'}`}>
+                                            #{i + 1}
                                         </div>
-                                    ))}
-                                </div>
+                                        <div className="flex-1">
+                                            <div className="font-bold text-slate-800 text-sm">{doc.name}</div>
+                                            <div className="text-xs text-slate-500 font-medium">{doc.count} cases submitted</div>
+                                        </div>
+                                        {i === 0 && <Award size={24} className="text-amber-400" />}
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
-
-                        {/* ORDERS LIST */}
+                        {/* ROW 3: MASTER PRODUCTION SCHEDULE */}
                         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden mb-8">
                             {/* ADVANCED FILTER BAR */}
                             <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col gap-4">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="font-bold text-slate-800 flex items-center gap-2">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                    <h2 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
                                         Master Production Schedule
-                                        <span className="bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full">{filteredOrders.length}</span>
+                                        <span className="bg-brand-100 text-brand-700 text-xs px-2.5 py-0.5 rounded-full font-bold">{filteredOrders.length}</span>
                                     </h2>
-                                    <button onClick={() => setIsOrderModalOpen(true)} className="bg-brand-600 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-brand-700 flex items-center gap-2 shadow-sm">
-                                        <PlusCircle size={16} /> New Order
+                                    <button onClick={() => setIsOrderModalOpen(true)} className="bg-brand-600 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-brand-700 flex items-center gap-2 shadow-sm transition-all active:scale-95">
+                                        <PlusCircle size={18} /> New Order
                                     </button>
                                 </div>
 
                                 {/* FILTERS GRID */}
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                                    <select className="border border-slate-300 rounded text-xs p-2 bg-white" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                    <div className="relative col-span-2 lg:col-span-2">
+                                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search Order ID or Patient..."
+                                            className="w-full border border-slate-300 rounded-md text-sm p-2 pl-9 bg-white outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                                            value={orderSearch}
+                                            onChange={e => setOrderSearch(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <select className="border border-slate-300 rounded-md text-sm p-2 bg-white focus:border-brand-500 outline-none" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                                         <option value="All">All Statuses</option>
                                         {Object.values(OrderStatus).map(s => <option key={s} value={s}>{s}</option>)}
                                     </select>
 
-                                    <select className="border border-slate-300 rounded text-xs p-2 bg-white" value={filterType} onChange={e => setFilterType(e.target.value)}>
+                                    <select className="border border-slate-300 rounded-md text-sm p-2 bg-white focus:border-brand-500 outline-none" value={filterType} onChange={e => setFilterType(e.target.value)}>
                                         <option value="All">All Types</option>
                                         {products.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                                     </select>
 
-                                    <select className="border border-slate-300 rounded text-xs p-2 bg-white" value={filterDoctor} onChange={e => setFilterDoctor(e.target.value)}>
+                                    <select className="border border-slate-300 rounded-md text-sm p-2 bg-white focus:border-brand-500 outline-none" value={filterDoctor} onChange={e => setFilterDoctor(e.target.value)}>
                                         <option value="All">All Doctors</option>
                                         {uniqueDoctors.map(d => <option key={d} value={d}>{d}</option>)}
                                     </select>
 
-                                    {/* Placeholder for future Technician filter if needed */}
-                                    <div className="relative">
-                                        <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Search ID / Patient..."
-                                            className="w-full border border-slate-300 rounded text-xs p-2 pl-8 bg-white outline-none focus:border-brand-500"
-                                        // Implement search state later if needed, or simple filter logic
-                                        />
-                                    </div>
-
-                                    {(filterType !== 'All' || filterDoctor !== 'All' || filterStatus !== 'All') && (
-                                        <button onClick={clearFilters} className="text-red-600 text-xs font-bold hover:underline col-span-2 lg:col-span-1 text-left lg:text-center mt-1">
-                                            Clear Filters
+                                    {(filterType !== 'All' || filterDoctor !== 'All' || filterStatus !== 'All' || orderSearch) && (
+                                        <button onClick={clearFilters} className="text-red-600 text-xs font-bold hover:underline flex items-center justify-center md:justify-start h-full">
+                                            <X size={14} className="mr-1" /> Clear Filters
                                         </button>
                                     )}
                                 </div>
                             </div>
 
 
-                            {/* DESKTOP TABLE - Now Mobile Scrollable */}
+                            {/* DESKTOP TABLE */}
                             <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left text-slate-600 min-w-[800px]">
+                                <table className="w-full text-sm text-left text-slate-600 min-w-[1000px]">
                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                                         <tr>
-                                            <th className="px-6 py-3 font-semibold">ID</th>
-                                            <th className="px-6 py-3 font-semibold">Date</th>
-                                            <th className="px-6 py-3 font-semibold">Patient</th>
-                                            <th className="px-6 py-3 font-semibold">Doctor</th>
-                                            <th className="px-6 py-3 font-semibold">Type</th>
-                                            <th className="px-6 py-3 font-semibold">Due</th>
-                                            <th className="px-6 py-3 font-semibold">Status</th>
-                                            <th className="px-6 py-3 font-semibold text-right">Action</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider">ID</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider">Date</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider">Patient</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider">Doctor</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider">Type</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider">Due</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider">Status</th>
+                                            <th className="px-6 py-4 font-bold tracking-wider text-right">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {filteredOrders.length === 0 ? (
-                                            <tr><td colSpan={8} className="text-center py-8 text-slate-400">No orders match filters.</td></tr>
+                                            <tr><td colSpan={8} className="text-center py-12 text-slate-400 font-medium">No orders found matching criteria.</td></tr>
                                         ) : (
                                             filteredOrders.map(order => (
-                                                <tr key={order.id} className="hover:bg-slate-50 transition-colors">
-                                                    <td className="px-6 py-3 font-mono text-xs text-slate-400">{order.id}</td>
-                                                    <td className="px-6 py-3 text-slate-500 text-xs">{formatDate(order.submissionDate)}</td>
-                                                    <td className="px-6 py-3 font-bold text-slate-900">{order.patientName}</td>
-                                                    <td className="px-6 py-3">{order.doctorName}</td>
-                                                    <td className="px-6 py-3 text-xs">{order.typeOfWork}</td>
-                                                    <td className="px-6 py-3 text-xs">{formatDate(order.dueDate)}</td>
-                                                    <td className="px-6 py-3"><StatusBadge status={order.status} /></td>
-                                                    <td className="px-6 py-3 text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <button onClick={() => openEditOrderModal(order)} className="text-slate-400 hover:text-brand-600"><Pencil size={16} /></button>
-                                                            <button onClick={() => handleOrderDelete(order.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={16} /></button>
+                                                <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
+                                                    <td className="px-6 py-4 font-mono text-xs text-slate-400 group-hover:text-brand-600 transition-colors">{order.id}</td>
+                                                    <td className="px-6 py-4 text-slate-500 text-xs">{formatDate(order.submissionDate)}</td>
+                                                    <td className="px-6 py-4 font-bold text-slate-900">{order.patientName}</td>
+                                                    <td className="px-6 py-4 text-slate-700 font-medium">{order.doctorName}</td>
+                                                    <td className="px-6 py-4 text-xs font-medium text-slate-600 bg-slate-50/50 rounded-lg">{order.productType}</td>
+                                                    <td className="px-6 py-4 text-xs font-bold text-slate-700">{formatDate(order.dueDate)}</td>
+                                                    <td className="px-6 py-4"><StatusBadge status={order.status} /></td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <div className="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => openEditOrderModal(order)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-all" title="Edit"><Pencil size={16} /></button>
+                                                            <button onClick={() => handleOrderDelete(order.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all" title="Delete"><Trash2 size={16} /></button>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -569,26 +502,31 @@ export const AdminDashboard: React.FC = () => {
                                 ) : (
                                     filteredOrders.map(order => (
                                         <div key={order.id} className="p-4 bg-white active:bg-slate-50 transition-colors">
-                                            <div className="flex justify-between items-start mb-2">
+                                            <div className="flex justify-between items-start mb-3">
                                                 <div>
-                                                    <h3 className="font-bold text-slate-900">{order.patientName}</h3>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1 rounded">{order.id}</span>
-                                                        <span className="text-xs text-slate-500">{order.typeOfWork}</span>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 rounded">{order.id}</span>
+                                                        <span className="text-[10px] font-bold uppercase text-slate-400">{formatDate(order.submissionDate)}</span>
                                                     </div>
+                                                    <h3 className="font-bold text-slate-900 text-lg leading-tight">{order.patientName}</h3>
                                                 </div>
                                                 <StatusBadge status={order.status} />
                                             </div>
-                                            <div className="flex justify-between items-end mt-3">
-                                                <div className="text-xs text-slate-400">
-                                                    <div className="flex items-center gap-1"><Users size={12} /> Dr. {order.doctorName}</div>
-                                                    <div className="flex items-center gap-1 mt-1"><Calendar size={12} /> Due: {formatDate(order.dueDate)}</div>
+
+                                            <div className="mb-3">
+                                                <span className="inline-block bg-brand-50 text-brand-700 text-xs font-bold px-2 py-1 rounded">{order.productType}</span>
+                                            </div>
+
+                                            <div className="flex justify-between items-end mt-2 pt-3 border-t border-slate-50">
+                                                <div className="text-xs text-slate-500 space-y-1">
+                                                    <div className="flex items-center gap-1.5"><Users size={12} className="text-slate-400" /> Dr. {order.doctorName}</div>
+                                                    <div className="flex items-center gap-1.5 font-medium text-slate-700"><Calendar size={12} className="text-slate-400" /> Due: {formatDate(order.dueDate)}</div>
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => openEditOrderModal(order)} className="p-2 bg-slate-50 text-brand-600 border border-slate-200 rounded shadow-sm">
+                                                    <button onClick={() => openEditOrderModal(order)} className="p-2 bg-white text-slate-400 hover:text-brand-600 border border-slate-200 rounded shadow-sm">
                                                         <Pencil size={16} />
                                                     </button>
-                                                    <button onClick={() => handleOrderDelete(order.id)} className="p-2 bg-slate-50 text-red-500 border border-slate-200 rounded shadow-sm">
+                                                    <button onClick={() => handleOrderDelete(order.id)} className="p-2 bg-white text-slate-400 hover:text-red-500 border border-slate-200 rounded shadow-sm">
                                                         <Trash2 size={16} />
                                                     </button>
                                                 </div>

@@ -104,27 +104,17 @@ export const AdminDashboard: React.FC = () => {
         loadData();
     };
 
-    const handleProductCodeUpdate = async (id: string, codeInput: string) => {
-        // Smart Parsing: If input ends with "-" followed by digits (e.g. "CPFM-433"),
-        // Split it into Code="CPFM-" and Counter=433.
-        const match = codeInput.match(/^(.+-)(\d+)$/);
-
-        let finalCode = codeInput.toUpperCase();
-
-        if (match) {
-            finalCode = match[1].toUpperCase(); // "CPFM-"
-            const newSeq = parseInt(match[2], 10);
-
-            // 1. Update Counter
-            if (!isNaN(newSeq)) {
-                // We assume the prefix is the product code key for the counter
-                await firestoreService.updateCounter(finalCode, newSeq);
-            }
-        }
-
-        // 2. Update Product Code
-        await firestoreService.updateProduct(id, { code: finalCode });
+    const handleProductCodeUpdate = async (id: string, code: string) => {
+        await firestoreService.updateProduct(id, { code: code.toUpperCase() });
         loadData();
+    };
+
+    const handleProductCounterUpdate = async (productCode: string, val: string) => {
+        const newSeq = parseInt(val, 10);
+        if (!isNaN(newSeq)) {
+            await firestoreService.updateCounter(productCode, newSeq);
+            loadData();
+        }
     };
 
     const handleUserUpdate = async (id: string, field: keyof User, value: string) => {
@@ -741,6 +731,14 @@ export const AdminDashboard: React.FC = () => {
                                                 value={product.code || 'N/A'}
                                                 onSave={(val) => handleProductCodeUpdate(product.id, val)}
                                                 className="font-mono bg-slate-100 px-2 rounded"
+                                            />
+                                        </div>
+                                        <div className="w-24">
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5" title="Last Order Sequence Number">Last Seq #</div>
+                                            <EditableField
+                                                value={(productCounters[product.code || ''] || 0).toString()}
+                                                onSave={(val) => handleProductCounterUpdate(product.code || '', val)}
+                                                className="font-mono bg-slate-100 px-2 rounded text-center"
                                             />
                                         </div>
                                         <button

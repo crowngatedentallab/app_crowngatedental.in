@@ -15,6 +15,7 @@ export const AdminDashboard: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [newProductName, setNewProductName] = useState('');
+    const [newProductCode, setNewProductCode] = useState('');
 
     // MODAL STATE
     const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -59,9 +60,14 @@ export const AdminDashboard: React.FC = () => {
     };
 
     const handleAddProduct = async () => {
-        if (!newProductName.trim()) return;
-        await firestoreService.createProduct({ name: newProductName });
+        if (!newProductName.trim() || !newProductCode.trim()) return;
+        await firestoreService.createProduct({
+            name: newProductName,
+            code: newProductCode.toUpperCase(),
+            isActive: true
+        });
         setNewProductName('');
+        setNewProductCode('');
         loadData();
     };
 
@@ -628,8 +634,16 @@ export const AdminDashboard: React.FC = () => {
                                     type="text"
                                     value={newProductName}
                                     onChange={(e) => setNewProductName(e.target.value)}
-                                    placeholder="e.g. Gold Crown, Denture..."
+                                    placeholder="Product Name (e.g. Zirconia)"
                                     className="flex-1 bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
+                                />
+                                <input
+                                    type="text"
+                                    value={newProductCode}
+                                    onChange={(e) => setNewProductCode(e.target.value)}
+                                    placeholder="Code (e.g. ZC)"
+                                    maxLength={4}
+                                    className="w-24 bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500 uppercase font-mono"
                                 />
                                 <button
                                     onClick={handleAddProduct}

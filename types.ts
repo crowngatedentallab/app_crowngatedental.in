@@ -28,6 +28,9 @@ export interface User {
 export interface Product {
   id: string;
   name: string;
+  code: string;       // e.g., "ZC", "EMV"
+  isActive: boolean;  // For soft deletion/hiding
+  category?: string;
 }
 
 export interface Order {

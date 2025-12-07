@@ -45,7 +45,10 @@ export default function App() {
   }
 
   const renderView = () => {
-    switch (currentUser.role) {
+    // Normalize role to uppercase to handle legacy/manual data issues
+    const role = currentUser.role?.toUpperCase();
+
+    switch (role) {
       case UserRole.ADMIN:
         return <AdminDashboard />;
       case UserRole.DOCTOR:
@@ -53,7 +56,7 @@ export default function App() {
       case UserRole.TECHNICIAN:
         return <TechnicianView user={currentUser} />;
       default:
-        return <div className="p-12 text-center">Error: Unknown User Role</div>;
+        return <div className="p-12 text-center text-red-500 font-bold">Error: Unknown User Role ({currentUser.role})</div>;
     }
   };
 

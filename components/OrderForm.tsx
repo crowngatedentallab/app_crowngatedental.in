@@ -3,23 +3,24 @@ import { Order, OrderStatus } from '../types';
 import { FileUploader } from './FileUploader';
 
 interface OrderFormProps {
+    initialData?: Partial<Order>;
     onSubmit: (order: Omit<Order, 'id' | 'status' | 'submissionDate'>) => Promise<void>;
     onCancel: () => void;
 }
 
-export const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, onCancel }) => {
+export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onCancel }) => {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        patientName: '',
-        doctorName: '',
-        clinicName: '',
-        toothNumber: '',
-        shade: '',
-        typeOfWork: '',
-        dueDate: '',
-        notes: '',
-        priority: 'Normal' as 'Normal' | 'Urgent',
-        attachments: [] as string[]
+        patientName: initialData?.patientName || '',
+        doctorName: initialData?.doctorName || '',
+        clinicName: initialData?.clinicName || '',
+        toothNumber: initialData?.toothNumber || '',
+        shade: initialData?.shade || '',
+        typeOfWork: initialData?.typeOfWork || '',
+        dueDate: initialData?.dueDate || '',
+        notes: initialData?.notes || '',
+        priority: (initialData?.priority || 'Normal') as 'Normal' | 'Urgent',
+        attachments: initialData?.attachments || [] as string[]
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -159,7 +160,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, onCancel }) => {
                     disabled={loading}
                     className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded shadow-sm disabled:opacity-50"
                 >
-                    {loading ? 'Adding...' : 'Add Order'}
+                    {loading ? 'Saving...' : (initialData ? 'Update Order' : 'Add Order')}
                 </button>
             </div>
         </form>

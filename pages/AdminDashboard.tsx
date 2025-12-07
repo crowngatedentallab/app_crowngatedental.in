@@ -5,7 +5,7 @@ import { EditableField } from '../components/EditableField';
 import { Modal } from '../components/Modal';
 import { OrderForm } from '../components/OrderForm';
 import { UserForm } from '../components/UserForm';
-import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar } from 'lucide-react';
+import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, AreaChart, Area, RadialBarChart, RadialBar, Legend } from 'recharts';
 
 export const AdminDashboard: React.FC = () => {
@@ -16,10 +16,14 @@ export const AdminDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [newProductName, setNewProductName] = useState('');
     const [newProductCode, setNewProductCode] = useState('');
+    const [productSearchTerm, setProductSearchTerm] = useState('');
 
     // MODAL STATE
     const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [isEditOrderModalOpen, setIsEditOrderModalOpen] = useState(false);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+    const [editingOrder, setEditingOrder] = useState<Order | undefined>(undefined);
 
     // FILTERS STATE
     const [filterType, setFilterType] = useState('All');
@@ -110,6 +114,20 @@ export const AdminDashboard: React.FC = () => {
         await firestoreService.createUser(userData);
         setIsUserModalOpen(false);
         loadData();
+    };
+
+    const openEditOrderModal = (order: Order) => {
+        setEditingOrder(order);
+        setIsEditOrderModalOpen(true);
+    };
+
+    const handleEditOrderSubmit = async (orderData: any) => {
+        if (editingOrder) {
+            await firestoreService.updateOrder(editingOrder.id, orderData);
+            setIsEditOrderModalOpen(false);
+            setEditingOrder(undefined);
+            loadData();
+        }
     };
 
     // --- FILTER LOGIC ---
@@ -595,12 +613,22 @@ export const AdminDashboard: React.FC = () => {
                                                     />
                                                 </td>
                                                 <td className="px-6 py-3 text-center">
-                                                    <button
-                                                        onClick={() => handleOrderDelete(order.id)}
-                                                        className="text-slate-400 hover:text-red-600 transition-colors"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                    <div className="flex justify-center gap-2">
+                                                        <button
+                                                            onClick={() => openEditOrderModal(order)}
+                                                            className="text-slate-400 hover:text-brand-600 transition-colors"
+                                                            title="Edit Order"
+                                                        >
+                                                            <Pencil size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleOrderDelete(order.id)}
+                                                            className="text-slate-400 hover:text-red-600 transition-colors"
+                                                            title="Delete Order"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -621,6 +649,17 @@ export const AdminDashboard: React.FC = () => {
                     <Modal isOpen={isOrderModalOpen} onClose={() => setIsOrderModalOpen(false)} title="Create New Order">
                         <OrderForm onSubmit={handleAddOrder} onCancel={() => setIsOrderModalOpen(false)} />
                     </Modal>
+
+                    {/* Edit Order Modal */}
+                    <Modal isOpen={isEditOrderModalOpen} onClose={() => setIsEditOrderModalOpen(false)} title="Edit Order">
+                        {editingOrder && (
+                            <OrderForm
+                                initialData={editingOrder}
+                                onSubmit={handleEditOrderSubmit}
+                                onCancel={() => setIsEditOrderModalOpen(false)}
+                            />
+                        )}
+                    </Modal>
                 </>
             )}
 
@@ -635,61 +674,98 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="p-6 bg-slate-50 border-b border-slate-200">
                             <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={newProductName}
-                                    onChange={(e) => setNewProductName(e.target.value)}
-                                    placeholder="Product Name (e.g. Zirconia)"
-                                    className="flex-1 bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
-                                />
-                                <input
-                                    type="text"
-                                    value={newProductCode}
-                                    onChange={(e) => setNewProductCode(e.target.value)}
-                                    placeholder="Code (e.g. ZC)"
-                                    maxLength={4}
-                                    className="w-24 bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500 uppercase font-mono"
-                                />
+                                <div className="relative flex-1">
+                                    <input
+                                        type="text"
+                                        value={productSearchTerm}
+                                        onChange={(e) => setProductSearchTerm(e.target.value)}
+                                        placeholder="Search products..."
+                                        className="w-full bg-white border border-slate-300 rounded px-3 py-2 pl-9 text-sm focus:outline-none focus:border-brand-500"
+                                    />
+                                    <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+                                </div>
                                 <button
-                                    onClick={handleAddProduct}
+                                    onClick={() => setIsProductModalOpen(true)}
                                     className="bg-brand-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-brand-700 flex items-center gap-2"
                                 >
-                                    <PlusCircle size={16} /> Add
+                                    <PlusCircle size={16} /> Add Product
                                 </button>
                             </div>
                             <p className="text-xs text-slate-500 mt-2">These items will appear in the "Restoration Type" dropdown for Doctors. Click name to edit.</p>
                         </div>
                         <div className="divide-y divide-slate-100 max-h-[60vh] overflow-y-auto">
-                            {products.length === 0 && <div className="p-8 text-center text-slate-400">No types defined.</div>}
+                            {products.filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) || p.code?.toLowerCase().includes(productSearchTerm.toLowerCase())).length === 0 && <div className="p-8 text-center text-slate-400">No types defined.</div>}
 
                             {/* ... existing ... */}
 
-                            {products.map(product => (
-                                <div key={product.id} className="p-4 flex items-center hover:bg-slate-50 gap-4">
-                                    <div className="font-medium text-slate-700 flex-1">
-                                        <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Product Name</div>
-                                        <EditableField value={product.name} onSave={(val) => handleProductUpdate(product.id, val)} />
+                            {products
+                                .filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) || p.code?.toLowerCase().includes(productSearchTerm.toLowerCase()))
+                                .map(product => (
+                                    <div key={product.id} className="p-4 flex items-center hover:bg-slate-50 gap-4">
+                                        <div className="font-medium text-slate-700 flex-1">
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Product Name</div>
+                                            <EditableField value={product.name} onSave={(val) => handleProductUpdate(product.id, val)} />
+                                        </div>
+                                        <div className="w-32">
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Code</div>
+                                            <EditableField
+                                                value={product.code || 'N/A'}
+                                                onSave={(val) => handleProductCodeUpdate(product.id, val)}
+                                                className="font-mono bg-slate-100 px-2 rounded"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteProduct(product.id)}
+                                            className="text-slate-300 hover:text-red-500 transition-colors pt-4"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
                                     </div>
-                                    <div className="w-32">
-                                        <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Code</div>
-                                        <EditableField
-                                            value={product.code || 'N/A'}
-                                            onSave={(val) => handleProductCodeUpdate(product.id, val)}
-                                            className="font-mono bg-slate-100 px-2 rounded"
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={() => handleDeleteProduct(product.id)}
-                                        className="text-slate-300 hover:text-red-500 transition-colors pt-4"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            ))}
+                                ))}
                         </div>
                     </div>
                 )
             }
+
+            {/* Product Modal */}
+            <Modal isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} title="Add New Product">
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Product Name</label>
+                        <input
+                            type="text"
+                            value={newProductName}
+                            onChange={(e) => setNewProductName(e.target.value)}
+                            placeholder="e.g. Zirconia Crown"
+                            className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Product Code</label>
+                        <input
+                            type="text"
+                            value={newProductCode}
+                            onChange={(e) => setNewProductCode(e.target.value)}
+                            placeholder="e.g. ZC"
+                            maxLength={4}
+                            className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500 uppercase font-mono"
+                        />
+                        <p className="text-xs text-slate-400 mt-1">Used for generating Order IDs (e.g. ZC-0001)</p>
+                    </div>
+                    <div className="flex justify-end pt-4">
+                        <button
+                            onClick={() => {
+                                handleAddProduct();
+                                setIsProductModalOpen(false);
+                            }}
+                            disabled={!newProductName || !newProductCode}
+                            className="bg-brand-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-brand-700 disabled:opacity-50"
+                        >
+                            Save Product
+                        </button>
+                    </div>
+                </div>
+            </Modal>
 
             {
                 activeTab === 'workload' && (

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User, Product } from '../types';
-import { Plus, Calendar, FileText, Lock, Loader2, X } from 'lucide-react';
+import { Plus, Calendar, FileText, Lock, Loader2, X, RefreshCw } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { MobileNav } from '../components/MobileNav';
 
@@ -104,14 +104,23 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
             <Lock size={12} /> {user.relatedEntity || 'Secure Portal'} • Authenticated
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          disabled={isSubmitting}
-          className="hidden md:flex items-center space-x-2 bg-brand-800 hover:bg-brand-900 text-white px-5 py-2.5 rounded shadow-md transition-all font-medium text-sm disabled:opacity-50"
-        >
-          <Plus size={18} />
-          <span>New Lab Order</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={loadData}
+            className="p-2 text-slate-500 hover:text-brand-600 bg-white rounded-full border border-slate-200 shadow-sm transition-all active:scale-95"
+            title="Refresh Data"
+          >
+            <RefreshCw size={20} className={isSubmitting ? 'animate-spin' : ''} />
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            disabled={isSubmitting}
+            className="hidden md:flex items-center space-x-2 bg-brand-800 hover:bg-brand-900 text-white px-5 py-2.5 rounded shadow-md transition-all font-medium text-sm disabled:opacity-50"
+          >
+            <Plus size={18} />
+            <span>New Lab Order</span>
+          </button>
+        </div>
       </div>
 
       {/* Mobile FAB */}

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User } from '../types';
-import { LogOut, Filter, CheckSquare, Clock, ChevronRight, Lock, CheckCircle2 } from 'lucide-react';
+import { LogOut, Filter, CheckSquare, Clock, ChevronRight, Lock, CheckCircle2, RefreshCw } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { MobileNav } from '../components/MobileNav';
 import { Modal } from '../components/Modal';
@@ -81,22 +81,32 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
   return (
     <div className="p-4 max-w-lg mx-auto space-y-6 mt-16 pb-24 md:pb-20 bg-slate-50 min-h-screen">
 
-      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200 relative">
+      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200 relative mb-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Lab Station</h1>
           <p className="text-xs text-slate-500 flex items-center gap-1">
             <Lock size={10} /> {user.fullName} • Logged In
           </p>
         </div>
-        <button
-          onClick={() => {
-            authService.logout();
-            window.location.reload();
-          }}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
-        >
-          <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={loadOrders}
+            className="p-2 text-slate-400 hover:text-brand-600 rounded-full hover:bg-slate-50 transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw size={20} />
+          </button>
+          <button
+            onClick={() => {
+              authService.logout();
+              window.location.reload();
+            }}
+            className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-50 transition-colors"
+            title="Logout"
+          >
+            <LogOut size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Mobile Tabs */}
@@ -163,19 +173,21 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
         )}
       </div>
 
-      {selectedOrder && (
-        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Update Case Status">
-          <CaseActionForm
-            order={selectedOrder}
-            technicians={technicians}
-            onSubmit={handleActionSubmit}
-            onCancel={() => setIsModalOpen(false)}
-          />
-        </Modal>
-      )}
+      {
+        selectedOrder && (
+          <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Update Case Status">
+            <CaseActionForm
+              order={selectedOrder}
+              technicians={technicians}
+              onSubmit={handleActionSubmit}
+              onCancel={() => setIsModalOpen(false)}
+            />
+          </Modal>
+        )
+      }
 
       {/* Mobile Nav for Tech */}
       <MobileNav activeTab={activeTab === 'todo' ? 'todo' : 'history'} onTabChange={(t) => setActiveTab(t as any)} userRole="TECHNICIAN" />
-    </div>
+    </div >
   );
 };

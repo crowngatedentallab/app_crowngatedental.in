@@ -173,16 +173,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                 />
             </div>
 
-            {/* Upload Disabled Requested by User */}
-            {/* <div>
-                <FileUploader
-                    label="Attachments"
-                    onUploadComplete={(url) => setFormData(prev => ({
-                        ...prev,
-                        attachments: [...(prev.attachments || []), url]
-                    }))}
-                />
-            </div> */}
+
 
             <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
                 <button

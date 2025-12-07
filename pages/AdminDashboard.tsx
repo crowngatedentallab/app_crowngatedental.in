@@ -26,6 +26,8 @@ export const AdminDashboard: React.FC = () => {
     const [isEditOrderModalOpen, setIsEditOrderModalOpen] = useState(false);
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState<Order | undefined>(undefined);
+    const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
+    const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
 
     // FILTERS STATE
     const [filterType, setFilterType] = useState('All');
@@ -133,6 +135,20 @@ export const AdminDashboard: React.FC = () => {
         await firestoreService.createUser(userData);
         setIsUserModalOpen(false);
         loadData();
+    };
+
+    const openEditUserModal = (user: User) => {
+        setEditingUser(user);
+        setIsEditUserModalOpen(true);
+    };
+
+    const handleEditUserSubmit = async (userData: any) => {
+        if (editingUser) {
+            await firestoreService.updateUser(editingUser.id, userData);
+            setIsEditUserModalOpen(false);
+            setEditingUser(undefined);
+            loadData();
+        }
     };
 
     const openEditOrderModal = (order: Order) => {
@@ -856,73 +872,88 @@ export const AdminDashboard: React.FC = () => {
 
             {
                 activeTab === 'users' && (
-                    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                        <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                            <h2 className="font-bold text-slate-800 flex items-center gap-2">
-                                <Users size={16} />
-                                User Directory
-                            </h2>
-                            <button
-                                onClick={() => setIsUserModalOpen(true)}
-                                className="bg-brand-600 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-brand-700 flex items-center gap-2 shadow-sm"
-                            >
-                                <PlusCircle size={16} /> Add User
-                            </button>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left text-slate-600">
-                                <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
-                                    <tr>
-                                        <th className="px-6 py-3 font-semibold">User ID</th>
-                                        <th className="px-6 py-3 font-semibold">Full Name</th>
-                                        <th className="px-6 py-3 font-semibold">Username</th>
-                                        <th className="px-6 py-3 font-semibold">Role</th>
-                                        <th className="px-6 py-3 font-semibold">Entity / Clinic</th>
-                                        <th className="px-6 py-3 font-semibold text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {users.map((user, idx) => (
-                                        <tr key={user.id} className={`hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                                            <td className="px-6 py-3 font-mono text-xs text-slate-400">{user.id}</td>
-                                            <td className="px-6 py-3 font-medium text-slate-900">
-                                                <EditableField value={user.fullName} onSave={(v) => handleUserUpdate(user.id, 'fullName', v)} />
-                                            </td>
-                                            <td className="px-6 py-3">
-                                                <EditableField value={user.username} onSave={(v) => handleUserUpdate(user.id, 'username', v)} />
-                                            </td>
-                                            <td className="px-6 py-3">
-                                                <EditableField
-                                                    type="select"
-                                                    value={user.role}
-                                                    options={Object.values(UserRole)}
-                                                    onSave={(v) => handleUserUpdate(user.id, 'role', v)}
-                                                />
-                                            </td>
-                                            <td className="px-6 py-3">
-                                                <EditableField value={user.relatedEntity || ''} onSave={(v) => handleUserUpdate(user.id, 'relatedEntity', v)} />
-                                            </td>
-                                            <td className="px-6 py-3 text-center">
-                                                <button
-                                                    onClick={() => handleUserDelete(user.id)}
-                                                    className="text-slate-400 hover:text-red-600 transition-colors"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </td>
+                    <>
+                        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                            <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                                <h2 className="font-bold text-slate-800 flex items-center gap-2">
+                                    <Users size={16} />
+                                    User Directory
+                                </h2>
+                                <button
+                                    onClick={() => setIsUserModalOpen(true)}
+                                    className="bg-brand-600 text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-brand-700 flex items-center gap-2 shadow-sm"
+                                >
+                                    <PlusCircle size={16} /> Add User
+                                </button>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left text-slate-600">
+                                    <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                                        <tr>
+                                            <th className="px-6 py-3 font-semibold">User Type</th>
+                                            <th className="px-6 py-3 font-semibold">Name</th>
+                                            <th className="px-6 py-3 font-semibold">Username</th>
+                                            <th className="px-6 py-3 font-semibold">Related Clinic / Spec</th>
+                                            <th className="px-6 py-3 font-semibold text-center">Action</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {users.map((user, idx) => (
+                                            <tr key={user.id} className={`hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                                                <td className="px-6 py-3">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700 border-purple-200' :
+                                                        user.role === 'TECHNICIAN' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                                                            'bg-brand-50 text-brand-700 border-brand-200'
+                                                        }`}>
+                                                        {user.role}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-3 font-medium text-slate-800">{user.fullName}</td>
+                                                <td className="px-6 py-3 font-mono text-xs text-slate-500">{user.username}</td>
+                                                <td className="px-6 py-3 text-slate-500 italic">{user.relatedEntity || '-'}</td>
+                                                <td className="px-6 py-3">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            onClick={() => openEditUserModal(user)}
+                                                            className="text-slate-400 hover:text-brand-600 transition-colors"
+                                                            title="Edit User"
+                                                        >
+                                                            <Pencil size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleUserDelete(user.id)}
+                                                            className="text-slate-400 hover:text-red-600 transition-colors"
+                                                            title="Delete User"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <Modal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} title="Add New User">
                             <UserForm onSubmit={handleAddUser} onCancel={() => setIsUserModalOpen(false)} />
                         </Modal>
-                    </div>
+
+                        {/* Edit User Modal */}
+                        <Modal isOpen={isEditUserModalOpen} onClose={() => setIsEditUserModalOpen(false)} title="Edit User">
+                            {editingUser && (
+                                <UserForm
+                                    initialData={editingUser}
+                                    onSubmit={handleEditUserSubmit}
+                                    onCancel={() => setIsEditUserModalOpen(false)}
+                                />
+                            )}
+                        </Modal>
+                    </>
                 )
             }
 
-        </div>
+        </div >
     );
 };

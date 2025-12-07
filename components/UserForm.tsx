@@ -2,18 +2,19 @@ import React, { useState } from 'react';
 import { User, UserRole } from '../types';
 
 interface UserFormProps {
+    initialData?: Partial<User>;
     onSubmit: (user: Omit<User, 'id'>) => Promise<void>;
     onCancel: () => void;
 }
 
-export const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel }) => {
+export const UserForm: React.FC<UserFormProps> = ({ initialData, onSubmit, onCancel }) => {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        username: '',
-        password: '',
-        fullName: '',
-        role: UserRole.DOCTOR,
-        relatedEntity: ''
+        username: initialData?.username || '',
+        password: initialData?.password || '',
+        fullName: initialData?.fullName || '',
+        role: initialData?.role || UserRole.DOCTOR,
+        relatedEntity: initialData?.relatedEntity || ''
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -115,7 +116,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel }) => {
                     disabled={loading}
                     className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded shadow-sm disabled:opacity-50"
                 >
-                    {loading ? 'Adding...' : 'Add User'}
+                    {loading ? 'Saving...' : (initialData ? 'Update User' : 'Add User')}
                 </button>
             </div>
         </form>

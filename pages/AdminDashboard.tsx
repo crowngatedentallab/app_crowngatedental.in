@@ -89,6 +89,11 @@ export const AdminDashboard: React.FC = () => {
         loadData();
     };
 
+    const handleProductCodeUpdate = async (id: string, code: string) => {
+        await firestoreService.updateProduct(id, { code: code.toUpperCase() });
+        loadData();
+    };
+
     const handleUserUpdate = async (id: string, field: keyof User, value: string) => {
         await firestoreService.updateUser(id, { [field]: value });
         loadData();
@@ -656,14 +661,26 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="divide-y divide-slate-100 max-h-[60vh] overflow-y-auto">
                             {products.length === 0 && <div className="p-8 text-center text-slate-400">No types defined.</div>}
+
+                            {/* ... existing ... */}
+
                             {products.map(product => (
-                                <div key={product.id} className="p-4 flex justify-between items-center hover:bg-slate-50">
+                                <div key={product.id} className="p-4 flex items-center hover:bg-slate-50 gap-4">
                                     <div className="font-medium text-slate-700 flex-1">
+                                        <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Product Name</div>
                                         <EditableField value={product.name} onSave={(val) => handleProductUpdate(product.id, val)} />
+                                    </div>
+                                    <div className="w-32">
+                                        <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Code</div>
+                                        <EditableField
+                                            value={product.code || 'N/A'}
+                                            onSave={(val) => handleProductCodeUpdate(product.id, val)}
+                                            className="font-mono bg-slate-100 px-2 rounded"
+                                        />
                                     </div>
                                     <button
                                         onClick={() => handleDeleteProduct(product.id)}
-                                        className="text-slate-300 hover:text-red-500 transition-colors"
+                                        className="text-slate-300 hover:text-red-500 transition-colors pt-4"
                                     >
                                         <Trash2 size={16} />
                                     </button>

@@ -6,7 +6,7 @@ import { Modal } from '../components/Modal';
 import { OrderForm } from '../components/OrderForm';
 import { UserForm } from '../components/UserForm';
 import { MobileNav } from '../components/MobileNav';
-import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil, Plus, Bell } from 'lucide-react';
+import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil, Plus } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { StatusBadge } from '../components/StatusBadge';
 
@@ -21,8 +21,8 @@ export const AdminDashboard: React.FC = () => {
     const [productSearchTerm, setProductSearchTerm] = useState('');
 
     const [productCounters, setProductCounters] = useState<Record<string, number>>({});
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [showNotifications, setShowNotifications] = useState(false);
+    // const [notifications, setNotifications] = useState<Notification[]>([]); // Removed unused
+    // const [showNotifications, setShowNotifications] = useState(false); // Removed unused
 
     // MODAL STATE
     const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -106,11 +106,25 @@ export const AdminDashboard: React.FC = () => {
 
     const handleOrderDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this order?')) {
-            await firestoreService.deleteOrder(id);
-            loadData();
+            try {
+                await firestoreService.deleteOrder(id);
+                setOrders(prev => prev.filter(o => o.id !== id));
+            } catch (error) {
+                console.error("Failed to delete order", error);
+                alert("Failed to delete order");
+            }
         }
     };
 
+    const handleAssignTechnician = async (orderId: string, techName: string) => {
+        try {
+            await firestoreService.updateOrder(orderId, { assignedTech: techName });
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, assignedTech: techName } : o));
+        } catch (error) {
+            console.error("Failed to assign technician", error);
+            alert("Failed to update technician assignment");
+        }
+    };
     const handleAddProduct = async () => {
         if (!newProductName.trim() || !newProductCode.trim()) return;
         await firestoreService.createProduct({
@@ -201,8 +215,9 @@ export const AdminDashboard: React.FC = () => {
     };
 
     // --- FILTER LOGIC ---
+    // --- FILTER LOGIC ---
     const filteredOrders = orders.filter(order => {
-        const matchType = filterType === 'All' || order.productType === filterType;
+        const matchType = filterType === 'All' || (order.productType || (order as any).typeOfWork) === filterType;
         const matchDoctor = filterDoctor === 'All' || order.doctorName === filterDoctor;
         const matchStatus = filterStatus === 'All' || order.status === filterStatus;
         const matchSearch = !orderSearch ||
@@ -220,24 +235,25 @@ export const AdminDashboard: React.FC = () => {
 
     // --- CHART DATA PREPARATION ---
     // --- KPI CALCULATIONS ---
-    // 1. Best Performing Product Type
+    // --- KPI CALCULATIONS ---
+    // 1. Best Performing Product Type (Count by orders.productType)
     const productCounts = orders.reduce((acc, order) => {
-        const type = order.productType || 'Unknown';
+        const type = order.productType || (order as any).typeOfWork || 'Unknown';
         const current = (acc[type] || 0) as number;
         acc[type] = current + 1;
         return acc;
     }, {} as Record<string, number>);
     const bestProduct = Object.entries(productCounts).sort((a, b) => (b[1] as number) - (a[1] as number))[0] || ['N/A', 0];
 
-    // 2. Best Turnaround Time
-    // Group by product type and calc avg days
+    // 2. Best Turnaround Time (Delivery - Submission for DELIVERED cases only)
     const productTurnarounds = orders.reduce((acc, order) => {
-        if (order.completedDate && order.submissionDate && order.productType) {
+        if (order.status === OrderStatus.DELIVERED && order.completedDate && order.submissionDate) {
+            const type = order.productType || (order as any).typeOfWork || 'Unknown';
             const start = new Date(order.submissionDate).getTime();
             const end = new Date(order.completedDate).getTime();
             const days = (end - start) / (1000 * 60 * 60 * 24);
-            if (!acc[order.productType]) acc[order.productType] = [];
-            (acc[order.productType] as number[]).push(days);
+            if (!acc[type]) acc[type] = [];
+            (acc[type] as number[]).push(days);
         }
         return acc;
     }, {} as Record<string, number[]>);
@@ -255,12 +271,12 @@ export const AdminDashboard: React.FC = () => {
         }
     });
 
-    // 3. Best & Worst Months
+    // 3. Best & Worst Months (Count total orders per month)
     const monthCounts = orders.reduce((acc, order) => {
         if (order.submissionDate) {
             const date = new Date(order.submissionDate);
             if (!isNaN(date.getTime())) {
-                const month = date.toLocaleString('default', { month: 'long' }); // e.g., "January"
+                const month = date.toLocaleString('default', { month: 'long' });
                 const current = (acc[month] || 0) as number;
                 acc[month] = current + 1;
             }
@@ -271,6 +287,36 @@ export const AdminDashboard: React.FC = () => {
     const sortedMonths = Object.entries(monthCounts).sort((a, b) => (b[1] as number) - (a[1] as number));
     const bestMonth = sortedMonths[0] || ['-', 0];
     const worstMonth = sortedMonths[sortedMonths.length - 1] || ['-', 0];
+
+    // 4. Monthly Trend Chart (Count by Created Month)
+    const getMonthlyVolume = () => {
+        const volume: Record<string, number> = {};
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        orders.forEach(order => {
+            if (order.submissionDate) {
+                const date = new Date(order.submissionDate);
+                if (!isNaN(date.getTime())) {
+                    const monthKey = months[date.getMonth()];
+                    volume[monthKey] = (volume[monthKey] || 0) + 1;
+                }
+            }
+        });
+        return months.map(m => ({ name: m, cases: volume[m] || 0 }));
+    };
+    const monthlyData = getMonthlyVolume();
+
+    // 5. Top Doctor (Count orders per doctor)
+    const doctorActivity = orders.reduce((acc, order) => {
+        if (order.doctorName) {
+            const current = (acc[order.doctorName] || 0) as number;
+            acc[order.doctorName] = current + 1;
+        }
+        return acc;
+    }, {} as Record<string, number>);
+    const topDoctors = Object.entries(doctorActivity)
+        .sort((a, b) => (b[1] as number) - (a[1] as number))
+        .slice(0, 5)
+        .map(([name, count]) => ({ name, count: count as number }));
 
     // --- WORKLOAD DATA ---
     // Technician Workload Table Data
@@ -456,33 +502,46 @@ export const AdminDashboard: React.FC = () => {
 
 
                             {/* DESKTOP TABLE */}
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto border-t border-slate-200">
                                 <table className="w-full text-sm text-left text-slate-600 min-w-[1000px]">
-                                    <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                                    <thead className="text-xs font-bold text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                                         <tr>
-                                            <th className="px-6 py-4 font-bold tracking-wider">ID</th>
-                                            <th className="px-6 py-4 font-bold tracking-wider">Date</th>
-                                            <th className="px-6 py-4 font-bold tracking-wider">Patient</th>
-                                            <th className="px-6 py-4 font-bold tracking-wider">Doctor</th>
-                                            <th className="px-6 py-4 font-bold tracking-wider">Type</th>
-                                            <th className="px-6 py-4 font-bold tracking-wider">Due</th>
-                                            <th className="px-6 py-4 font-bold tracking-wider">Status</th>
-                                            <th className="px-6 py-4 font-bold tracking-wider text-right">Action</th>
+                                            <th className="px-6 py-4 sticky left-0 bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">ID</th>
+                                            <th className="px-6 py-4">Date</th>
+                                            <th className="px-6 py-4">Patient</th>
+                                            <th className="px-6 py-4">Doctor</th>
+                                            <th className="px-6 py-4">Type</th>
+                                            <th className="px-6 py-4">Due</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4">Assigned Tech</th>
+                                            <th className="px-6 py-4 text-right">Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody className="divide-y divide-slate-100 bg-white">
                                         {filteredOrders.length === 0 ? (
-                                            <tr><td colSpan={8} className="text-center py-12 text-slate-400 font-medium">No orders found matching criteria.</td></tr>
+                                            <tr><td colSpan={9} className="text-center py-12 text-slate-400 font-medium">No orders found matching criteria.</td></tr>
                                         ) : (
                                             filteredOrders.map(order => (
                                                 <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
-                                                    <td className="px-6 py-4 font-mono text-xs text-slate-400 group-hover:text-brand-600 transition-colors">{order.id}</td>
+                                                    <td className="px-6 py-4 font-mono text-xs font-medium text-brand-600 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-r border-transparent group-hover:border-slate-100">{order.id}</td>
                                                     <td className="px-6 py-4 text-slate-500 text-xs">{formatDate(order.submissionDate)}</td>
                                                     <td className="px-6 py-4 font-bold text-slate-900">{order.patientName}</td>
                                                     <td className="px-6 py-4 text-slate-700 font-medium">{order.doctorName}</td>
                                                     <td className="px-6 py-4 text-xs font-medium text-slate-600 bg-slate-50/50 rounded-lg">{order.productType || (order as any).typeOfWork || '-'}</td>
                                                     <td className="px-6 py-4 text-xs font-bold text-slate-700">{formatDate(order.dueDate)}</td>
                                                     <td className="px-6 py-4"><StatusBadge status={order.status} /></td>
+                                                    <td className="px-6 py-4">
+                                                        <select
+                                                            className="text-xs border border-slate-200 rounded p-1.5 bg-white focus:ring-2 focus:ring-brand-500 outline-none hover:border-slate-300 transition-colors cursor-pointer w-32"
+                                                            value={order.assignedTech || ''}
+                                                            onChange={(e) => handleAssignTechnician(order.id, e.target.value)}
+                                                        >
+                                                            <option value="">Unassigned</option>
+                                                            {users.filter(u => u.role === UserRole.TECHNICIAN).map(tech => (
+                                                                <option key={tech.id} value={tech.fullName}>{tech.fullName}</option>
+                                                            ))}
+                                                        </select>
+                                                    </td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button onClick={() => openEditOrderModal(order)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-all" title="Edit"><Pencil size={16} /></button>
@@ -675,11 +734,11 @@ export const AdminDashboard: React.FC = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {technicianWorkload.map(tech => (
-                                        <tr key={tech.name} className="hover:bg-slate-50">
-                                            <td className="px-4 py-3 font-bold text-slate-800 border-r border-slate-100 sticky left-0 bg-white">{tech.name}</td>
-                                            <td className="px-4 py-3 text-center font-bold text-blue-700 bg-blue-50/30">{tech.total}</td>
+                                        <tr key={tech.name} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-4 py-3 font-medium text-slate-900 border-r border-slate-100 sticky left-0 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">{tech.name}</td>
+                                            <td className="px-4 py-3 text-center font-bold text-brand-700 bg-brand-50/30">{tech.total}</td>
                                             {Object.values(OrderStatus).map(status => (
-                                                <td key={status} className={`px-2 py-3 text-center ${tech[status] > 0 ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-300'}`}>
+                                                <td key={status} className={`px-2 py-3 text-center text-xs ${tech[status] > 0 ? 'font-bold text-slate-800' : 'text-slate-300'}`}>
                                                     {tech[status] > 0 ? tech[status] : '-'}
                                                 </td>
                                             ))}

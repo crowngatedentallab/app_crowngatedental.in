@@ -9,12 +9,20 @@ export enum OrderStatus {
   SUBMITTED = 'Submitted',
   RECEIVED = 'Received',
   DESIGNING = 'Designing',
+  METAL_COPING = 'Metal Coping',
   MILLING = 'Milling',
+  BISQUE_TRIAL = 'Bisque Trial',
+  METAL_TRIAL = 'Metal Trial',
+  PROCESSING = 'Processing',
+  TEETH_ARRANGEMENT = 'Teeth Arrangement',
+  TRIAL_WORK = 'Trial Work',
   GLAZING = 'Glazing',
   QUALITY_CHECK = 'Quality Check',
   DISPATCHED = 'Dispatched',
   DELIVERED = 'Delivered'
 }
+
+
 
 export interface User {
   id: string;

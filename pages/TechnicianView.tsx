@@ -1,9 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User } from '../types';
-import { ArrowRight, CheckCircle2, Lock, GitCompareArrows } from 'lucide-react';
+import { LogOut, Filter, CheckSquare, Clock, ChevronRight, Lock, CheckCircle2 } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
+import { MobileNav } from '../components/MobileNav';
 import { Modal } from '../components/Modal';
+import { authService } from '../services/authService';
 import { CaseActionForm } from '../components/CaseActionForm';
 
 interface TechnicianViewProps {
@@ -13,7 +16,7 @@ interface TechnicianViewProps {
 export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [technicians, setTechnicians] = useState<User[]>([]);
-  const [activeTab, setActiveTab] = useState<'todo' | 'completed'>('todo');
+  const [activeTab, setActiveTab] = useState<'todo' | 'history'>('todo');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -51,6 +54,7 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
+    // Expects YYYY-MM-DD
     const parts = dateString.split('-');
     if (parts.length === 3) {
       return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
@@ -75,80 +79,87 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
   const displayedOrders = activeTab === 'todo' ? todoOrders : completedOrders;
 
   return (
-    <div className="p-4 max-w-lg mx-auto space-y-6 mt-16 pb-20 bg-slate-50 min-h-screen">
+    <div className="p-4 max-w-lg mx-auto space-y-6 mt-16 pb-24 md:pb-20 bg-slate-50 min-h-screen">
 
-      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200 relative">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Lab Station</h1>
           <p className="text-xs text-slate-500 flex items-center gap-1">
             <Lock size={10} /> {user.fullName} • Logged In
           </p>
         </div>
+        <button
+          onClick={() => {
+            authService.logout();
+            window.location.reload();
+          }}
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+        >
+          <LogOut size={20} />
+        </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
+      {/* Mobile Tabs */}
+      <div className="flex  bg-slate-100 p-1 rounded-lg mt-4 w-full shadow-inner">
         <button
           onClick={() => setActiveTab('todo')}
-          className={`flex-1 py-2.5 text-sm font-bold rounded transition-all ${activeTab === 'todo' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
+          className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${activeTab === 'todo' ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}
         >
-          My Queue ({todoOrders.length})
+          To Do ({todoOrders.length})
         </button>
         <button
-          onClick={() => setActiveTab('completed')}
-          className={`flex-1 py-2.5 text-sm font-bold rounded transition-all ${activeTab === 'completed' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
+          onClick={() => setActiveTab('history')}
+          className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${activeTab === 'history' ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}
         >
-          History ({completedOrders.length})
+          History
         </button>
       </div>
 
       <div className="space-y-4">
-        <div className="bg-white border border-slate-200 p-5 rounded-lg shadow-sm relative overflow-hidden group">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <th className="px-4 py-2 font-semibold text-left">Order ID</th>
-                  <th className="px-4 py-2 font-semibold text-left">Created</th>
-                  <th className="px-4 py-2 font-semibold text-left">Patient</th>
-                  <th className="px-4 py-2 font-semibold text-left">Type & Shade</th>
-                  <th className="px-4 py-2 font-semibold text-left">Due Date</th>
-                  <th className="px-4 py-2 font-semibold text-left">Status</th>
-                  <th className="px-4 py-2 font-semibold text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {displayedOrders.map(order => (
-                  <tr key={order.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-500">{order.id}</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">{formatDate(order.submissionDate)}</td>
-                    <td className="px-4 py-3 font-medium text-slate-900">{order.patientName}</td>
-                    <td className="px-4 py-3 text-slate-600">
-                      <div className="font-medium text-xs">{order.typeOfWork}</div>
-                      <div className="text-[10px] text-slate-400">Shade: {order.shade}</div>
-                      <div className="text-[10px] text-slate-400">Tooth: {order.toothNumber}</div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700 font-medium">{formatDate(order.dueDate)}</td>
-                    <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => openActionModal(order)}
-                        className="text-brand-600 hover:text-brand-800 font-bold text-xs border border-brand-200 hover:border-brand-500 px-3 py-1 rounded transition-colors"
-                      >
-                        Update
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        {displayedOrders.length === 0 && (
+        {displayedOrders.length === 0 ? (
           <div className="text-center py-16 text-slate-400 bg-white rounded-lg border border-slate-200 border-dashed">
             <CheckCircle2 size={48} className="mx-auto mb-4 text-slate-200" />
             <p>No orders found in {activeTab}.</p>
           </div>
+        ) : (
+          displayedOrders.map(order => (
+            <div key={order.id} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+              <div className={`absolute top-0 left-0 w-1 h-full ${order.priority === 'Urgent' ? 'bg-red-500' : 'bg-brand-500'
+                }`} />
+
+              <div className="flex justify-between items-start mb-3 pl-2">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-lg leading-tight">{order.patientName}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs font-mono text-slate-400 bg-slate-50 px-1 rounded">#{order.id}</span>
+                    <span className="text-xs font-medium text-slate-600">{order.typeOfWork}</span>
+                  </div>
+                </div>
+                <StatusBadge status={order.status} />
+              </div>
+
+              <div className="space-y-2 pl-2 text-sm text-slate-600 mt-4 pt-4 border-t border-slate-50">
+                <div className="flex justify-between">
+                  <span className="text-xs uppercase font-bold text-slate-400">Doctor</span>
+                  <span>{order.doctorName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs uppercase font-bold text-slate-400">Due Date</span>
+                  <span className={`font-bold ${new Date(order.dueDate) < new Date() ? 'text-red-600' : 'text-slate-800'}`}>
+                    {formatDate(order.dueDate)}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => openActionModal(order)}
+                className="w-full mt-4 bg-slate-50 hover:bg-slate-100 text-brand-700 font-bold py-3 rounded border border-slate-200 transition-colors flex justify-center items-center gap-2"
+              >
+                <span>Update Status</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          ))
         )}
       </div>
 
@@ -162,6 +173,9 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
           />
         </Modal>
       )}
+
+      {/* Mobile Nav for Tech */}
+      <MobileNav activeTab={activeTab === 'todo' ? 'todo' : 'history'} onTabChange={(t) => setActiveTab(t as any)} userRole="TECHNICIAN" />
     </div>
   );
 };

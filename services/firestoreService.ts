@@ -269,6 +269,19 @@ export const firestoreService = {
                     createdAt: timestamp
                 });
             }
+
+            // NOTIFY ADMINS of Assignment
+            const admins = users.filter(u => u.role === UserRole.ADMIN);
+            for (const admin of admins) {
+                await firestoreService.createNotification({
+                    userId: admin.id,
+                    title: "Technician Assigned",
+                    message: `Case ${id} assigned to ${updates.assignedTech}`,
+                    type: 'info',
+                    read: false,
+                    createdAt: timestamp
+                });
+            }
         }
 
         // 2. Status Changed -> Notify Doctor
@@ -285,6 +298,21 @@ export const firestoreService = {
                         title: `Case ${updates.status}`,
                         message: `Order #${id} for ${currentOrder.patientName} is now ${updates.status}`,
                         type: 'success',
+                        read: false,
+                        createdAt: timestamp
+                    });
+                }
+
+                // NOTIFY ADMINS of Status Change
+                // Reuse users from above or fetch if undefined (but expected to be defined if we are here)
+                const allUsers = await firestoreService.getUsers();
+                const adminsToNotify = allUsers.filter(u => u.role === UserRole.ADMIN);
+                for (const admin of adminsToNotify) {
+                    await firestoreService.createNotification({
+                        userId: admin.id,
+                        title: "Status Update",
+                        message: `Order #${id} is now ${updates.status}`,
+                        type: 'info',
                         read: false,
                         createdAt: timestamp
                     });

@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User, Product } from '../types';
-import { Plus, Calendar, FileText, Lock, Loader2 } from 'lucide-react';
+import { Plus, Calendar, FileText, Lock, Loader2, X } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
-import { FileUploader } from '../components/FileUploader';
+import { MobileNav } from '../components/MobileNav';
 
 interface DoctorDashboardProps {
   user: User;
@@ -13,7 +13,7 @@ interface DoctorDashboardProps {
 export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [showForm, setShowForm] = useState(false); // Used as Modal trigger now
+  const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     patientName: '',
@@ -28,7 +28,6 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
 
   useEffect(() => {
     loadData();
-    // Realtime subscription removed for MVP
   }, [user]);
 
   const loadData = async () => {
@@ -62,7 +61,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
         clinicName: user.relatedEntity // Enforce clinic name from Auth
       });
 
-      loadData(); // Reload logic
+      loadData();
 
       setShowForm(false);
       // Reset form
@@ -85,7 +84,6 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
-    // Expects YYYY-MM-DD from sheetService normalization
     const parts = dateString.split('-');
     if (parts.length === 3) {
       return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
@@ -96,7 +94,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-8 mt-16">
+    <div className="p-6 max-w-6xl mx-auto space-y-8 mt-16 pb-24 md:pb-6">
 
       {/* Clinic Header */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-200 pb-6">
@@ -109,197 +107,144 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
         <button
           onClick={() => setShowForm(!showForm)}
           disabled={isSubmitting}
-          className="flex items-center space-x-2 bg-brand-800 hover:bg-brand-900 text-white px-5 py-2.5 rounded shadow-md transition-all font-medium text-sm disabled:opacity-50"
+          className="hidden md:flex items-center space-x-2 bg-brand-800 hover:bg-brand-900 text-white px-5 py-2.5 rounded shadow-md transition-all font-medium text-sm disabled:opacity-50"
         >
           <Plus size={18} />
           <span>New Lab Order</span>
         </button>
       </div>
 
-      {/* New Order Form */}
+      {/* Mobile FAB */}
+      <button
+        onClick={() => setShowForm(true)}
+        className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg shadow-brand-600/30 flex items-center justify-center z-50 hover:bg-brand-700 active:scale-95 transition-all"
+      >
+        <Plus size={28} />
+      </button>
+
+      {/* New Order Form Modal/Overlay */}
       {showForm && (
-        <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-xl animate-in fade-in slide-in-from-top-4 relative">
-          <button
-            onClick={() => !isSubmitting && setShowForm(false)}
-            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 disabled:opacity-50"
-            disabled={isSubmitting}
-          >
-            Cancel
-          </button>
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-slate-100 p-4 flex items-center justify-between z-10">
+              <h2 className="text-lg font-bold text-brand-800 flex items-center gap-2">
+                <FileText size={20} /> New Work Authorization
+              </h2>
+              <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 bg-slate-50 p-2 rounded-full"><X size={20} /></button>
+            </div>
 
-          <div className="flex items-center gap-2 mb-6 text-brand-800 border-b border-slate-100 pb-2">
-            <FileText size={20} />
-            <h2 className="text-lg font-bold">New Work Authorization</h2>
+            <div className="p-6">
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <div>
+                  <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Doctor</label>
+                  <input disabled type="text" value={user.fullName} className="w-full bg-slate-100 border border-slate-200 rounded p-2.5 text-slate-500 cursor-not-allowed" />
+                </div>
+                <div>
+                  <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Patient Name <span className="text-red-500">*</span></label>
+                  <input required type="text" placeholder="Last Name, First Name" className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                    value={formData.patientName} onChange={e => setFormData({ ...formData, patientName: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Required Date <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <input required type="date" min={today} className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none appearance-none"
+                      value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Tooth #</label>
+                  <input placeholder="e.g. 11, 21" type="text" className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                    value={formData.toothNumber} onChange={e => setFormData({ ...formData, toothNumber: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Shade</label>
+                  <input placeholder="e.g. A2" type="text" className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                    value={formData.shade} onChange={e => setFormData({ ...formData, shade: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Restoration Type</label>
+                  <select className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                    value={formData.typeOfWork} onChange={e => setFormData({ ...formData, typeOfWork: e.target.value })}>
+                    {products.length === 0 ? <option>Loading types...</option> :
+                      products.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Notes / Instructions</label>
+                  <textarea rows={3} placeholder="Additional details..." className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                    value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="flex items-center space-x-2 cursor-pointer p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                    <input type="checkbox" className="w-5 h-5 text-red-600 rounded focus:ring-red-500"
+                      checked={formData.priority === 'Urgent'} onChange={e => setFormData({ ...formData, priority: e.target.checked ? 'Urgent' : 'Normal' })} />
+                    <span className="font-bold text-slate-700">Mark as URGENT Rush Case</span>
+                  </label>
+                </div>
+
+                <div className="md:col-span-2 flex gap-4 pt-4 border-t border-slate-100">
+                  <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-3 border border-slate-300 rounded text-slate-600 font-bold hover:bg-slate-50" disabled={isSubmitting}>Cancel</button>
+                  <button type="submit" disabled={isSubmitting} className="flex-[2] py-3 bg-brand-700 text-white rounded font-bold hover:bg-brand-800 shadow-lg disabled:opacity-70 flex justify-center items-center gap-2">
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : 'Submit Order'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            <div>
-              <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Doctor</label>
-              <input
-                disabled
-                type="text"
-                value={user.fullName}
-                className="w-full bg-slate-100 border border-slate-200 rounded p-2.5 text-slate-500 cursor-not-allowed"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Patient Name <span className="text-red-500">*</span></label>
-              <input
-                required
-                type="text"
-                placeholder="Last Name, First Name"
-                className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:ring-1 focus:ring-brand-600 focus:outline-none transition-all"
-                value={formData.patientName}
-                onChange={e => setFormData({ ...formData, patientName: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Required Date <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <input
-                  required
-                  type="date"
-                  min={today}
-                  className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none appearance-none"
-                  value={formData.dueDate}
-                  onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
-                />
-                {/* Calendar icon pointer-events-none ensures clicking icon passes through to input */}
-                <Calendar className="absolute right-3 top-2.5 text-slate-400 pointer-events-none" size={18} />
-              </div>
-            </div>
-            <div>
-              <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Tooth #</label>
-              <input
-                placeholder="e.g. 11, 21"
-                type="text"
-                className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none"
-                value={formData.toothNumber}
-                onChange={e => setFormData({ ...formData, toothNumber: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Shade</label>
-              <input
-                placeholder="e.g. A2"
-                type="text"
-                className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none"
-                value={formData.shade}
-                onChange={e => setFormData({ ...formData, shade: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Restoration Type</label>
-              <select
-                className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none"
-                value={formData.typeOfWork}
-                onChange={e => setFormData({ ...formData, typeOfWork: e.target.value })}
-              >
-                {products.length === 0 ? (
-                  <option>Loading types...</option>
-                ) : (
-                  products.map(prod => (
-                    <option key={prod.id} value={prod.name}>{prod.name}</option>
-                  ))
-                )}
-              </select>
-            </div>
-            <div>
-              <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Case Priority</label>
-              <select
-                className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none"
-                value={formData.priority}
-                onChange={e => setFormData({ ...formData, priority: e.target.value as 'Normal' | 'Urgent' })}
-              >
-                <option value="Normal">Standard</option>
-                <option value="Urgent">Rush (Urgent)</option>
-              </select>
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Clinical Notes / Instructions</label>
-              <textarea
-                className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none h-24 resize-none"
-                value={formData.notes}
-                onChange={e => setFormData({ ...formData, notes: e.target.value })}
-              />
-            </div>
-
-            <div className="md:col-span-2 flex justify-end space-x-4 pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                disabled={isSubmitting}
-                className="px-6 py-2.5 text-slate-600 hover:text-slate-900 text-sm font-medium disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-8 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded shadow-sm text-sm font-bold uppercase tracking-wide flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {isSubmitting && <Loader2 className="animate-spin" size={16} />}
-                {isSubmitting ? 'Processing...' : 'Authorize Case'}
-              </button>
-            </div>
-          </form>
         </div>
       )}
 
-      {/* Orders List */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 border-l-4 border-brand-600 pl-3">
-          My Active Cases
-        </h3>
-        {orders.length === 0 ? (
-          <div className="bg-white border border-slate-200 p-12 text-center rounded-lg">
-            <p className="text-slate-400">No active cases found for {user.fullName}.</p>
+      {/* Orders Grid */}
+      <h2 className="text-lg font-bold text-slate-800 border-b border-slate-200 pb-2">My Open Cases</h2>
+      {orders.length === 0 ? (
+        <div className="text-center py-16 bg-white border border-slate-200 rounded-xl border-dashed">
+          <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+            <FileText size={32} />
           </div>
-        ) : (
-          orders.map(order => (
-            <div key={order.id} className="bg-white border border-slate-200 p-5 rounded-lg hover:shadow-md transition-shadow group">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="font-bold text-lg text-slate-900">{order.patientName}</span>
-                    <span className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{order.id}</span>
-                    {order.priority === 'Urgent' && (
-                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded border border-red-200 font-bold uppercase tracking-wider">Rush</span>
-                    )}
-                  </div>
-                  <div className="text-sm text-slate-500 flex flex-wrap gap-x-6 gap-y-1 mt-2">
-                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>Tooth #{order.toothNumber || '-'}</span>
-                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>{order.typeOfWork}</span>
-                    <span className="flex items-center gap-1 text-brand-700 font-medium"><Calendar size={12} /> Due: {formatDate(order.dueDate)}</span>
-                  </div>
-                </div>
+          <h3 className="text-lg font-bold text-slate-700">No active orders</h3>
+          <p className="text-slate-500 max-w-xs mx-auto mt-2">Use the "New Lab Order" button to submit a new case.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {orders.map(order => (
+            <div key={order.id} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+              <div className={`absolute top-0 left-0 w-1 h-full ${order.priority === 'Urgent' ? 'bg-red-500' : 'bg-brand-500'
+                }`} />
 
-                <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-slate-100 pt-3 md:pt-0 mt-2 md:mt-0">
-                  {/* Status Timeline */}
-                  <div className="hidden lg:flex flex-col items-end gap-1">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-widest">Stage</span>
-                    <div className="flex items-center gap-1">
-                      {[OrderStatus.SUBMITTED, OrderStatus.DESIGNING, OrderStatus.MILLING, OrderStatus.GLAZING, OrderStatus.DISPATCHED].map((step, idx) => {
-                        const currentIdx = Object.values(OrderStatus).indexOf(order.status);
-                        const stepIdx = Object.values(OrderStatus).indexOf(step);
-                        const isCompleted = currentIdx >= stepIdx;
-                        return (
-                          <div key={step} className={`h-1 w-6 rounded-full ${isCompleted ? 'bg-brand-600' : 'bg-slate-200'}`} />
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <StatusBadge status={order.status} />
-                  </div>
+              <div className="flex justify-between items-start mb-3 pl-2">
+                <div>
+                  <span className="text-xs font-mono text-slate-400 block mb-1">#{order.id}</span>
+                  <h3 className="font-bold text-slate-900 text-lg leading-tight">{order.patientName}</h3>
+                  <div className="text-sm text-slate-500 font-medium">{order.typeOfWork}</div>
                 </div>
+                <StatusBadge status={order.status} />
+              </div>
+
+              <div className="space-y-2 pl-2 text-sm text-slate-600 mt-4 pt-4 border-t border-slate-50">
+                <div className="flex justify-between">
+                  <span>Required:</span>
+                  <span className="font-bold text-slate-800">{formatDate(order.dueDate)}</span>
+                </div>
+                {order.shade && (
+                  <div className="flex justify-between">
+                    <span>Shade:</span>
+                    <span className="font-mono bg-slate-100 px-1.5 rounded text-xs">{order.shade}</span>
+                  </div>
+                )}
+                {order.toothNumber && (
+                  <div className="flex justify-between">
+                    <span>Tooth #:</span>
+                    <span className="font-mono bg-slate-100 px-1.5 rounded text-xs">{order.toothNumber}</span>
+                  </div>
+                )}
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
+      {/* Mobile Nav for Doctor */}
+      <MobileNav activeTab="orders" onTabChange={() => { }} userRole="DOCTOR" />
     </div>
   );
 };

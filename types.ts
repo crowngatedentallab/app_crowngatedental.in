@@ -57,3 +57,14 @@ export interface DashboardStats {
   revenue: number;
   completionRate: number;
 }
+
+export interface Notification {
+  id: string;
+  userId: string; // Or UserRole for broader alerts, but individual is safer pattern
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  read: boolean;
+  createdAt: string; // ISO String
+  link?: string; // e.g. /orders/123
+}

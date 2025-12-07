@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { User, UserRole } from '../types';
 import { Menu, LogOut, User as UserIcon } from 'lucide-react';
 import { Logo } from './Logo';
+import { NotificationBell } from './NotificationBell';
 
 interface NavbarProps {
   currentUser: User | null;
@@ -31,7 +31,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSid
       </div>
 
       {currentUser && (
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 lg:gap-6">
+          <NotificationBell user={currentUser} />
+
           <div className="flex flex-col items-end">
             <span className="text-sm font-bold text-slate-800">{currentUser.fullName}</span>
             <span className="text-[10px] uppercase text-slate-500 tracking-wider font-semibold hidden md:block">

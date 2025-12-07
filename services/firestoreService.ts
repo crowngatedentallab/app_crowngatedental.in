@@ -12,11 +12,33 @@ import {
     getDoc,
     setDoc,
     runTransaction,
-    arrayUnion
+    arrayUnion,
+    orderBy,
+    limit
 } from "firebase/firestore";
-import { Order, User, Product, UserRole, OrderStatus } from "../types";
+import { Order, User, Product, UserRole, OrderStatus, Notification } from "../types";
 
 export const firestoreService = {
+    // --- NOTIFICATIONS ---
+    getNotifications: async (userId: string): Promise<Notification[]> => {
+        const q = query(
+            collection(db, "notifications"),
+            where("userId", "==", userId),
+            orderBy("createdAt", "desc"),
+            limit(20)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+    },
+
+    createNotification: async (notification: Omit<Notification, 'id'>) => {
+        await addDoc(collection(db, "notifications"), notification);
+    },
+
+    markNotificationRead: async (id: string) => {
+        await updateDoc(doc(db, "notifications", id), { read: true });
+    },
+
     // --- COUNTERS ---
     getCounter: async (productCode: string): Promise<number> => {
         const counterRef = doc(db, "counters", productCode);
@@ -140,6 +162,21 @@ export const firestoreService = {
 
             await setDoc(doc(db, "orders", newOrderId), newOrderData);
 
+            // NOTIFICATION: Notify Admins of new order
+            const users = await firestoreService.getUsers();
+            const admins = users.filter(u => u.role === UserRole.ADMIN);
+            for (const admin of admins) {
+                await firestoreService.createNotification({
+                    userId: admin.id,
+                    title: "New Order Received",
+                    message: `Dr. ${order.doctorName} submitted case ${newOrderId}`,
+                    type: 'info',
+                    read: false,
+                    createdAt: new Date().toISOString(),
+                    link: `/orders` // Admin view doesn't have deep link yet, but dashboard is fine
+                });
+            }
+
             return newOrderId;
 
         } catch (e) {
@@ -212,8 +249,47 @@ export const firestoreService = {
         const orderRef = doc(db, "orders", id);
 
         const finalUpdates: any = { ...updates };
-        if (updates.assignedTech) {
+        const timestamp = new Date().toISOString();
+
+        // NOTIFICATIONS
+        // 1. Tech Assigned
+        if (updates.assignedTech && updates.assignedTech !== (await getDoc(orderRef)).data()?.assignedTech) {
             finalUpdates.technicianHistory = arrayUnion(updates.assignedTech);
+
+            // Find Tech ID to notify
+            const users = await firestoreService.getUsers();
+            const tech = users.find(u => u.fullName === updates.assignedTech && u.role === UserRole.TECHNICIAN);
+            if (tech) {
+                await firestoreService.createNotification({
+                    userId: tech.id,
+                    title: "New Case Assigned",
+                    message: `You have been assigned case ${id}`,
+                    type: 'warning',
+                    read: false,
+                    createdAt: timestamp
+                });
+            }
+        }
+
+        // 2. Status Changed -> Notify Doctor
+        if (updates.status) {
+            const currentOrder = (await getDoc(orderRef)).data() as Order;
+            if (currentOrder && updates.status !== currentOrder.status) {
+                // Find Doctor ID
+                const users = await firestoreService.getUsers();
+                const doctor = users.find(u => u.fullName === currentOrder.doctorName && u.role === UserRole.DOCTOR);
+
+                if (doctor && (updates.status === OrderStatus.DISPATCHED || updates.status === OrderStatus.DELIVERED || updates.status === OrderStatus.RECEIVED)) {
+                    await firestoreService.createNotification({
+                        userId: doctor.id,
+                        title: `Case ${updates.status}`,
+                        message: `Order #${id} for ${currentOrder.patientName} is now ${updates.status}`,
+                        type: 'success',
+                        read: false,
+                        createdAt: timestamp
+                    });
+                }
+            }
         }
 
         await updateDoc(orderRef, finalUpdates);

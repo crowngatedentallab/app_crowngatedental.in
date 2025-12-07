@@ -161,13 +161,15 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
                 </div>
               </div>
 
-              <button
-                onClick={() => openActionModal(order)}
-                className="w-full mt-4 bg-slate-50 hover:bg-slate-100 text-brand-700 font-bold py-3 rounded border border-slate-200 transition-colors flex justify-center items-center gap-2"
-              >
-                <span>Update Status</span>
-                <ChevronRight size={16} />
-              </button>
+              {activeTab === 'todo' && (
+                <button
+                  onClick={() => openActionModal(order)}
+                  className="w-full mt-4 bg-slate-50 hover:bg-slate-100 text-brand-700 font-bold py-3 rounded border border-slate-200 transition-colors flex justify-center items-center gap-2"
+                >
+                  <span>Update Status</span>
+                  <ChevronRight size={16} />
+                </button>
+              )}
             </div>
           ))
         )}

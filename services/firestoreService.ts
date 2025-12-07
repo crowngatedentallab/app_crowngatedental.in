@@ -28,6 +28,22 @@ export const firestoreService = {
         await setDoc(counterRef, { lastSequence: newSequence }, { merge: true });
     },
 
+    _generateOrderId: async (productCode: string): Promise<string> => {
+        return runTransaction(db, async (transaction) => {
+            const counterRef = doc(db, "counters", productCode);
+            const counterDoc = await transaction.get(counterRef);
+            const currentSeq = counterDoc.exists() ? (counterDoc.data().lastSequence || 0) : 0;
+            const nextSeq = currentSeq + 1;
+            transaction.set(counterRef, { lastSequence: nextSeq }, { merge: true });
+
+            if (productCode.endsWith('-')) {
+                return `${productCode}${nextSeq}`;
+            } else {
+                return `${productCode}-${nextSeq.toString().padStart(4, '0')}`;
+            }
+        });
+    },
+
     // --- USERS ---
     getUsers: async (): Promise<User[]> => {
         const querySnapshot = await getDocs(collection(db, "users"));
@@ -116,17 +132,14 @@ export const firestoreService = {
                 const nextSeq = currentSeq + 1;
                 transaction.set(counterRef, { lastSequence: nextSeq }, { merge: true });
 
-                // Format: ZC-0001
-                // User Request: If last was 432, next should be 433.
-                // We keep 4 digit padding for consistency, but if sequence > 9999 it expands.
-                const sequencePart = nextSeq.toString().padStart(4, '0');
-                if (productCode.includes('-')) {
-                    // If code already has hyphen e.g. "CPFM", we just append sequence.
-                    // But user typically wants "CPFM-0043".
-                    // If user complains about format "CPFM-433-0001", it means product code was "CPFM-433".
-                    // We should just produce `${productCode}-${sequencePart}`.
+                // Format:
+                // If code ends in '-', append sequence directly. e.g. "CPFM-" + "433" -> "CPFM-433"
+                // Else, append '-0000'. e.g. "ZC" + "0001" -> "ZC-0001"
+                if (productCode.endsWith('-')) {
+                    return `${productCode}${nextSeq}`;
+                } else {
+                    return `${productCode}-${nextSeq.toString().padStart(4, '0')}`;
                 }
-                return `${productCode}-${sequencePart}`;
             });
 
             // 3. Save Order with generated ID
@@ -168,20 +181,10 @@ export const firestoreService = {
 
                         if (productCode) {
                             // 2. Generate New ID via Transaction
-                            const counterRef = doc(db, "counters", productCode);
                             let newOrderId = "";
 
                             try {
-                                newOrderId = await runTransaction(db, async (transaction) => {
-                                    const counterDoc = await transaction.get(counterRef);
-                                    const currentSeq = counterDoc.exists() ? (counterDoc.data().lastSequence || 0) : 0;
-                                    const nextSeq = currentSeq + 1;
-                                    transaction.set(counterRef, { lastSequence: nextSeq }, { merge: true });
-
-                                    const sequencePart = nextSeq.toString().padStart(4, '0');
-                                    // See createOrder for note on format
-                                    return `${productCode}-${sequencePart}`;
-                                });
+                                newOrderId = await firestoreService._generateOrderId(productCode);
 
                                 // 3. Create New Document
                                 await setDoc(doc(db, "orders", newOrderId), {
@@ -196,7 +199,7 @@ export const firestoreService = {
 
                             } catch (error) {
                                 console.error("Failed to regenerate Order ID:", error);
-                                // Fallback: just update the existing doc if generation fails? 
+                                // Fallback: just update the existing doc if generation fails?
                                 // No, better to throw or let it fall through to normal update if critical.
                                 // But if transaction fails, we shouldn't update partially.
                                 throw error;

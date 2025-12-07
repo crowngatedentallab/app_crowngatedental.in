@@ -3,13 +3,21 @@ import { OrderStatus } from '../types';
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   [OrderStatus.SUBMITTED]: 'bg-slate-100 text-slate-600 border-slate-200',
-  [OrderStatus.RECEIVED]: 'bg-blue-50 text-blue-700 border-blue-200',
-  [OrderStatus.DESIGNING]: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  [OrderStatus.MILLING]: 'bg-amber-50 text-amber-700 border-amber-200', // Industrial feel
-  [OrderStatus.GLAZING]: 'bg-orange-50 text-orange-700 border-orange-200',
-  [OrderStatus.QUALITY_CHECK]: 'bg-rose-50 text-rose-700 border-rose-200',
-  [OrderStatus.DISPATCHED]: 'bg-brand-50 text-brand-700 border-brand-200',
-  [OrderStatus.DELIVERED]: 'bg-green-50 text-green-700 border-green-200',
+  [OrderStatus.RECEIVED]: 'bg-blue-100 text-blue-700',
+  [OrderStatus.DESIGNING]: 'bg-purple-100 text-purple-700',
+  [OrderStatus.MILLING]: 'bg-indigo-100 text-indigo-700',
+  [OrderStatus.GLAZING]: 'bg-pink-100 text-pink-700',
+  [OrderStatus.QUALITY_CHECK]: 'bg-orange-100 text-orange-700',
+  [OrderStatus.DISPATCHED]: 'bg-teal-100 text-teal-700',
+  [OrderStatus.DELIVERED]: 'bg-green-100 text-green-700',
+
+  // New Statuses
+  [OrderStatus.METAL_COPING]: 'bg-zinc-200 text-zinc-700',
+  [OrderStatus.BISQUE_TRIAL]: 'bg-amber-100 text-amber-800',
+  [OrderStatus.METAL_TRIAL]: 'bg-slate-200 text-slate-700',
+  [OrderStatus.PROCESSING]: 'bg-sky-100 text-sky-700',
+  [OrderStatus.TEETH_ARRANGEMENT]: 'bg-rose-100 text-rose-700',
+  [OrderStatus.TRIAL_WORK]: 'bg-fuchsia-100 text-fuchsia-700',
 };
 
 export const StatusBadge: React.FC<{ status: OrderStatus }> = ({ status }) => {

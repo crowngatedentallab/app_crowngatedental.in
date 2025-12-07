@@ -16,14 +16,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSid
       <div className="flex items-center space-x-4">
         {/* Mobile menu removed as per user request */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 flex items-center justify-center rounded-lg overflow-hidden">
+          <div className="w-10 h-10 flex items-center justify-center rounded-lg overflow-hidden flex-shrink-0">
             <Logo className="w-full h-full" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold text-slate-900 leading-tight">
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-lg font-bold text-slate-900 leading-tight truncate max-w-[150px] md:max-w-none">
               CROWNGATE
             </span>
-            <span className="text-[10px] font-semibold text-slate-500 tracking-widest uppercase">
+            <span className="text-[10px] font-semibold text-slate-500 tracking-widest uppercase truncate hidden xs:block md:block">
               The Oral Prosthetic Centre
             </span>
           </div>
@@ -31,10 +31,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSid
       </div>
 
       {currentUser && (
-        <div className="flex items-center gap-4 lg:gap-6">
+        <div className="flex items-center gap-2 md:gap-6">
           <NotificationBell user={currentUser} />
 
-          <div className="flex flex-col items-end">
+          <div className="flex flex-col items-end hidden sm:flex">
             <span className="text-sm font-bold text-slate-800">{currentUser.fullName}</span>
             <span className="text-[10px] uppercase text-slate-500 tracking-wider font-semibold hidden md:block">
               {currentUser.role === UserRole.DOCTOR && currentUser.relatedEntity
@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSid
             </span>
           </div>
 
-          <div className="h-9 w-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-800 font-bold border border-brand-200">
+          <div className="h-9 w-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-800 font-bold border border-brand-200 flex-shrink-0">
             <UserIcon size={16} />
           </div>
 

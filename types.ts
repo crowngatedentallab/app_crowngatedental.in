@@ -57,6 +57,7 @@ export interface Order {
   technicianHistory?: string[]; // List of all technicians who worked on this
   priority: 'Normal' | 'Urgent';
   attachments?: string[]; // URLs of uploaded files
+  completedDate?: string; // ISO string when status becomes Dispatched/Delivered
 }
 
 export interface DashboardStats {

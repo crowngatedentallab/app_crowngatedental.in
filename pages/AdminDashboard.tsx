@@ -234,7 +234,7 @@ export const AdminDashboard: React.FC = () => {
     };
     const monthlyData = getMonthlyVolume();
 
-    const activeCount = orders.filter(o => o.status !== OrderStatus.DELIVERED).length;
+    const activeCount = orders.filter(o => o.status !== OrderStatus.DELIVERED && o.status !== OrderStatus.DISPATCHED).length;
 
     // 3. Product Distribution
     const productData = products.map(p => ({
@@ -252,8 +252,17 @@ export const AdminDashboard: React.FC = () => {
         .slice(0, 5)
         .map(([name, count]) => ({ name, count }));
 
-    // 5. Avg Turnaround (Mock)
-    const avgTurnaround = "3.2 Days";
+    // 5. Avg Turnaround (Updated)
+    const completedOrdersWithTime = orders.filter(o => o.completedDate && o.submissionDate);
+    const avgTurnaround = (() => {
+        if (completedOrdersWithTime.length === 0) return "-";
+        const totalTime = completedOrdersWithTime.reduce((acc, o) => {
+            // Handle potential fallback if dates are strings
+            return acc + (new Date(o.completedDate!).getTime() - new Date(o.submissionDate!).getTime());
+        }, 0);
+        const days = totalTime / (1000 * 60 * 60 * 24 * completedOrdersWithTime.length);
+        return days > 0 ? `${days.toFixed(1)} Days` : "< 1 Day";
+    })();
 
     // 6. Today's Data
     const isToday = (dateString: string) => {
@@ -381,7 +390,7 @@ export const AdminDashboard: React.FC = () => {
                 {activeTab === 'orders' && (
                     <>
                         {/* STATS CARDS */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6">
                             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
                                 <div className="flex justify-between items-start">
                                     <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-widest">Today</p>
@@ -437,9 +446,9 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* DESKTOP TABLE */}
-                            <div className="hidden md:block overflow-x-auto">
-                                <table className="w-full text-sm text-left text-slate-600">
+                            {/* DESKTOP TABLE - Now Mobile Scrollable */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left text-slate-600 min-w-[800px]">
                                     <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                                         <tr>
                                             <th className="px-6 py-3 font-semibold">ID</th>

@@ -286,8 +286,13 @@ export const firestoreService = {
             }
         }
 
-        // 2. Status Changed -> Notify Doctor
+        // 2. Status Changed -> Notify Doctor & Set Completed Date
         if (updates.status) {
+            // Set completedDate if status is finalized
+            if (updates.status === OrderStatus.DISPATCHED || updates.status === OrderStatus.DELIVERED) {
+                finalUpdates.completedDate = timestamp;
+            }
+
             const currentOrder = (await getDoc(orderRef)).data() as Order;
             if (currentOrder && updates.status !== currentOrder.status) {
                 // Find Doctor ID

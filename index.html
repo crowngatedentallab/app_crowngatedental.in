@@ -1,71 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Crowngate Dental Lab Portal</title>
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crowngate Dental Lab Portal</title>
+  <meta name="theme-color" content="#1e40af" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb', // Royal Blue
+              700: '#1d4ed8',
+              800: '#1e40af', // Deep Navy
+              900: '#1e3a8a',
             },
-            colors: {
-              brand: {
-                50: '#eff6ff',
-                100: '#dbeafe',
-                500: '#3b82f6',
-                600: '#2563eb', // Royal Blue
-                700: '#1d4ed8',
-                800: '#1e40af', // Deep Navy
-                900: '#1e3a8a',
-              },
-              accent: {
-                500: '#d97706', // Gold
-                600: '#b45309',
-              },
-              slate: {
-                50: '#f8fafc',
-                100: '#f1f5f9',
-                200: '#e2e8f0',
-                300: '#cbd5e1',
-                400: '#94a3b8',
-                500: '#64748b',
-                600: '#475569',
-                700: '#334155',
-                800: '#1e293b',
-                900: '#0f172a',
-              }
+            accent: {
+              500: '#d97706', // Gold
+              600: '#b45309',
+            },
+            slate: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
             }
           }
         }
       }
-    </script>
-    <style>
-      body {
-        background-color: #f8fafc; /* Light Slate Background */
-        color: #1e293b; /* Dark Slate Text */
-      }
-      /* Custom Scrollbar - Professional */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f5f9;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
-    </style>
+    }
+  </script>
+  <style>
+    body {
+      background-color: #f8fafc;
+      /* Light Slate Background */
+      color: #1e293b;
+      /* Dark Slate Text */
+    }
+
+    /* Custom Scrollbar - Professional */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -78,10 +86,12 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root"></div>
+
+<body>
+  <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>

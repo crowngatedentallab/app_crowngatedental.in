@@ -32,9 +32,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSid
 
       {currentUser && (
         <div className="flex items-center gap-6">
-          <div className="hidden md:flex flex-col items-end">
+          <div className="flex flex-col items-end">
             <span className="text-sm font-bold text-slate-800">{currentUser.fullName}</span>
-            <span className="text-[10px] uppercase text-slate-500 tracking-wider font-semibold">
+            <span className="text-[10px] uppercase text-slate-500 tracking-wider font-semibold hidden md:block">
               {currentUser.role === UserRole.DOCTOR && currentUser.relatedEntity
                 ? currentUser.relatedEntity
                 : currentUser.role}

@@ -4,6 +4,7 @@ import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User, Product } from '../types';
 import { Plus, Calendar, FileText, Lock, Loader2 } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
+import { FileUploader } from '../components/FileUploader';
 
 interface DoctorDashboardProps {
   user: User;
@@ -21,7 +22,8 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
     shade: '',
     dueDate: '',
     notes: '',
-    priority: 'Normal' as 'Normal' | 'Urgent'
+    priority: 'Normal' as 'Normal' | 'Urgent',
+    attachments: [] as string[]
   });
 
   useEffect(() => {
@@ -71,7 +73,8 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
         shade: '',
         dueDate: '',
         notes: '',
-        priority: 'Normal'
+        priority: 'Normal',
+        attachments: []
       });
     } catch (error) {
       console.error("Submission failed", error);
@@ -218,6 +221,16 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
                 className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:border-brand-600 focus:outline-none h-24 resize-none"
                 value={formData.notes}
                 onChange={e => setFormData({ ...formData, notes: e.target.value })}
+              />
+            </div>
+            {/* File Upload Section */}
+            <div className="md:col-span-2">
+              <FileUploader
+                label="Attachments (Photos / Scans)"
+                onUploadComplete={(url) => setFormData(prev => ({
+                  ...prev,
+                  attachments: [...(prev.attachments || []), url]
+                }))}
               />
             </div>
             <div className="md:col-span-2 flex justify-end space-x-4 pt-4 border-t border-slate-100">

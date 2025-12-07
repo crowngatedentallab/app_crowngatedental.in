@@ -45,6 +45,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel }) => {
                     <input
                         required
                         type="text"
+                        autoComplete="off"
                         className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
                         value={formData.username}
                         onChange={e => setFormData({ ...formData, username: e.target.value })}
@@ -55,6 +56,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel }) => {
                     <input
                         required
                         type="text"
+                        autoComplete="new-password"
                         className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
                         value={formData.password}
                         onChange={e => setFormData({ ...formData, password: e.target.value })}

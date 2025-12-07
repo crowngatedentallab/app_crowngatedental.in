@@ -44,6 +44,7 @@ export interface Order {
   notes?: string;
   assignedTech?: string; // Links to User.fullName
   priority: 'Normal' | 'Urgent';
+  attachments?: string[]; // URLs of uploaded files
 }
 
 export interface DashboardStats {

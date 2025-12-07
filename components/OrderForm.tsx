@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Order, OrderStatus } from '../types';
+import { FileUploader } from './FileUploader';
 
 interface OrderFormProps {
     onSubmit: (order: Omit<Order, 'id' | 'status' | 'submissionDate'>) => Promise<void>;
@@ -17,7 +18,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, onCancel }) => {
         typeOfWork: '',
         dueDate: '',
         notes: '',
-        priority: 'Normal' as 'Normal' | 'Urgent'
+        priority: 'Normal' as 'Normal' | 'Urgent',
+        attachments: [] as string[]
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -131,6 +133,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ onSubmit, onCancel }) => {
                     rows={3}
                     value={formData.notes}
                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                />
+            </div>
+
+            <div>
+                <FileUploader
+                    label="Attachments"
+                    onUploadComplete={(url) => setFormData(prev => ({
+                        ...prev,
+                        attachments: [...(prev.attachments || []), url]
+                    }))}
                 />
             </div>
 

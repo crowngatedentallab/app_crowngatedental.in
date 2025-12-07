@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Order, OrderStatus } from '../types';
-import { FileUploader } from './FileUploader';
+import { firestoreService } from '../services/firestoreService';
+import { Order, OrderStatus, User, Product } from '../types';
+// import { FileUploader } from './FileUploader'; // Disabled for now
 
 interface OrderFormProps {
     initialData?: Partial<Order>;
@@ -10,6 +11,10 @@ interface OrderFormProps {
 
 export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onCancel }) => {
     const [loading, setLoading] = useState(false);
+    const [doctors, setDoctors] = useState<User[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+
+    // Load Doctors and Products for Dropdowns
     const [formData, setFormData] = useState({
         patientName: initialData?.patientName || '',
         doctorName: initialData?.doctorName || '',
@@ -22,6 +27,28 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
         priority: (initialData?.priority || 'Normal') as 'Normal' | 'Urgent',
         attachments: initialData?.attachments || [] as string[]
     });
+
+    React.useEffect(() => {
+        const loadOptions = async () => {
+            const [usersData, productsData] = await Promise.all([
+                firestoreService.getUsers(),
+                firestoreService.getProducts()
+            ]);
+            setDoctors(usersData.filter(u => u.role === 'DOCTOR'));
+            setProducts(productsData.filter(p => p.isActive));
+        };
+        loadOptions();
+    }, []);
+
+    const handleDoctorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedDoctorName = e.target.value;
+        const doctor = doctors.find(d => d.fullName === selectedDoctorName);
+        setFormData(prev => ({
+            ...prev,
+            doctorName: selectedDoctorName,
+            clinicName: doctor?.relatedEntity || '' // Auto-fill Clinic
+        }));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,21 +76,26 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Doctor Name</label>
-                    <input
+                    <select
                         required
-                        type="text"
-                        className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                        className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white"
                         value={formData.doctorName}
-                        onChange={e => setFormData({ ...formData, doctorName: e.target.value })}
-                    />
+                        onChange={handleDoctorChange}
+                    >
+                        <option value="">Select Doctor...</option>
+                        {doctors.map(d => (
+                            <option key={d.id} value={d.fullName}>{d.fullName}</option>
+                        ))}
+                    </select>
                 </div>
                 <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Clinic (Optional)</label>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Clinic (Auto-filled)</label>
                     <input
                         type="text"
-                        className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                        className="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 text-slate-500 focus:outline-none cursor-not-allowed"
                         value={formData.clinicName}
-                        onChange={e => setFormData({ ...formData, clinicName: e.target.value })}
+                        readOnly
+                        title="Auto-filled based on selected Doctor"
                     />
                 </div>
             </div>
@@ -71,13 +103,17 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Type of Work</label>
-                    <input
+                    <select
                         required
-                        type="text"
-                        className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                        className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none bg-white"
                         value={formData.typeOfWork}
                         onChange={e => setFormData({ ...formData, typeOfWork: e.target.value })}
-                    />
+                    >
+                        <option value="">Select Restoration Type...</option>
+                        {products.map(p => (
+                            <option key={p.id} value={p.name}>{p.name} ({p.code})</option>
+                        ))}
+                    </select>
                 </div>
                 <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Due Date</label>
@@ -137,7 +173,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                 />
             </div>
 
-            <div>
+            {/* Upload Disabled Requested by User */}
+            {/* <div>
                 <FileUploader
                     label="Attachments"
                     onUploadComplete={(url) => setFormData(prev => ({
@@ -145,7 +182,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                         attachments: [...(prev.attachments || []), url]
                     }))}
                 />
-            </div>
+            </div> */}
 
             <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
                 <button

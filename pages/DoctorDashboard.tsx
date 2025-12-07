@@ -224,6 +224,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
               />
             </div>
             {/* File Upload Section */}
+            {/* File Upload Section - DISABLED (User Request)
             <div className="md:col-span-2">
               <FileUploader
                 label="Attachments (Photos / Scans)"
@@ -232,7 +233,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
                   attachments: [...(prev.attachments || []), url]
                 }))}
               />
-            </div>
+            </div> */}
             <div className="md:col-span-2 flex justify-end space-x-4 pt-4 border-t border-slate-100">
               <button
                 type="button"

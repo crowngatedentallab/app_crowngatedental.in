@@ -155,7 +155,28 @@ export const firestoreService = {
     },
 
     deleteProduct: async (id: string): Promise<void> => {
-        await deleteDoc(doc(db, "products", id));
+        // 1. Get the product name before deleting to find related orders
+        const prodRef = doc(db, "products", id);
+        const prodSnap = await getDoc(prodRef);
+
+        if (prodSnap.exists()) {
+            const prodName = prodSnap.data().name;
+
+            // 2. Find all orders with this product type
+            const ordersRef = collection(db, "orders");
+            const q = query(ordersRef, where("typeOfWork", "==", prodName));
+            const querySnapshot = await getDocs(q);
+
+            // 3. Update them to "Product Not Found"
+            // Using Promise.all for parallel updates
+            const updatePromises = querySnapshot.docs.map(doc =>
+                updateDoc(doc.ref, { typeOfWork: "Product Not Found" })
+            );
+            await Promise.all(updatePromises);
+        }
+
+        // 4. Delete the product
+        await deleteDoc(prodRef);
     },
 
     // --- INITIALIZATION ---

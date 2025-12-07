@@ -80,19 +80,6 @@ export const AdminDashboard: React.FC = () => {
             const newCounters = countersData.reduce((acc, curr) => ({ ...acc, [curr.code]: curr.count }), {} as Record<string, number>);
             setProductCounters(newCounters);
 
-            // Attempt to load notifications safely
-            try {
-                // Find current admin user ID if possible, or just look for the default 'admin' user since we can't get auth context here easily yet
-                // For this MVP, we will try to find a user named 'admin' or just pass 'admin' and fix the service to handle it
-                const adminUser = usersData.find(u => u.username === 'admin');
-                const targetId = adminUser ? adminUser.id : 'admin';
-                const notificationsData = await firestoreService.getNotifications(targetId);
-                setNotifications(notificationsData);
-            } catch (err) {
-                console.warn("Failed to load notifications:", err);
-                // Don't crash the dashboard
-            }
-
         } catch (error) {
             console.error("Critical error loading dashboard data:", error);
             // Even if this fails, we should try to render what we can, but if core fails, we are in trouble.
@@ -715,40 +702,113 @@ export const AdminDashboard: React.FC = () => {
                 )}
 
                 {activeTab === 'workload' && (
-                    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden mb-8">
-                        <div className="p-4 border-b border-slate-200 bg-slate-50">
-                            <h2 className="font-bold text-slate-800 text-lg">Technician Workload</h2>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-xs text-left text-slate-600">
-                                <thead className="bg-slate-100 font-bold text-slate-700 uppercase">
-                                    <tr>
-                                        <th className="px-4 py-3 border-b border-slate-200 sticky left-0 bg-slate-100">Technician Name</th>
-                                        <th className="px-4 py-3 border-b border-slate-200 text-center bg-blue-50 text-blue-800">Total Cases</th>
-                                        {Object.values(OrderStatus).map(status => (
-                                            <th key={status} className="px-2 py-3 border-b border-slate-200 text-center whitespace-nowrap min-w-[80px]">
-                                                {status}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {technicianWorkload.map(tech => (
-                                        <tr key={tech.name} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-4 py-3 font-medium text-slate-900 border-r border-slate-100 sticky left-0 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">{tech.name}</td>
-                                            <td className="px-4 py-3 text-center font-bold text-brand-700 bg-brand-50/30">{tech.total}</td>
-                                            {Object.values(OrderStatus).map(status => (
-                                                <td key={status} className={`px-2 py-3 text-center text-xs ${tech[status] > 0 ? 'font-bold text-slate-800' : 'text-slate-300'}`}>
-                                                    {tech[status] > 0 ? tech[status] : '-'}
-                                                </td>
-                                            ))}
-                                        </tr>
+                    <div className="space-y-8">
+                        {/* 1. UNASSIGNED ORDERS SECTION */}
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <AlertTriangle size={20} className="text-amber-500" />
+                                Unassigned Orders
+                                <span className="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full">{orders.filter(o => !o.assignedTech).length}</span>
+                            </h2>
+                            {orders.filter(o => !o.assignedTech).length === 0 ? (
+                                <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-400">
+                                    <CheckSquare size={32} className="mx-auto mb-2 opacity-20" />
+                                    All orders are assigned!
+                                </div>
+                            ) : (
+                                <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar">
+                                    {orders.filter(o => !o.assignedTech).map(order => (
+                                        <div key={order.id} className="bg-white border-l-4 border-l-amber-400 border border-slate-200 rounded-lg p-4 min-w-[280px] shadow-sm hover:shadow-md transition-shadow snap-start">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="font-mono text-xs font-bold text-slate-500">{order.id}</span>
+                                                <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{formatDate(order.dueDate)}</span>
+                                            </div>
+                                            <h3 className="font-bold text-slate-800 mb-1 truncate">{order.patientName}</h3>
+                                            <div className="text-xs text-brand-600 font-medium mb-3">{order.productType || (order as any).typeOfWork}</div>
+
+                                            <div className="mt-2">
+                                                <select
+                                                    className="w-full text-xs border border-slate-300 rounded p-1.5 bg-slate-50 outline-none focus:border-brand-500 cursor-pointer"
+                                                    onChange={(e) => handleAssignTechnician(order.id, e.target.value)}
+                                                    defaultValue=""
+                                                >
+                                                    <option value="" disabled>Assign to...</option>
+                                                    {users.filter(u => u.role === UserRole.TECHNICIAN).map(tech => (
+                                                        <option key={tech.id} value={tech.fullName}>{tech.fullName}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
                                     ))}
-                                    {technicianWorkload.length === 0 && (
-                                        <tr><td colSpan={Object.keys(OrderStatus).length + 2} className="text-center py-8 text-slate-400">No technicians found.</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 2. TECHNICIAN CARDS GRID */}
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <Users size={20} className="text-brand-600" />
+                                Technician Workload
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {users.filter(u => u.role === UserRole.TECHNICIAN).map(tech => {
+                                    const techOrders = orders.filter(o => o.assignedTech === tech.fullName && o.status !== OrderStatus.DELIVERED);
+                                    return (
+                                        <div key={tech.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
+                                            {/* Card Header */}
+                                            <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                                                <div>
+                                                    <h3 className="font-bold text-slate-800">{tech.fullName}</h3>
+                                                    <p className="text-xs text-slate-500 uppercase font-medium">{tech.role}</p>
+                                                </div>
+                                                <div className="bg-brand-100 text-brand-800 font-bold text-sm px-2.5 py-1 rounded-full">
+                                                    {techOrders.length} <span className="text-[10px] font-normal opacity-75">active</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Active Orders List */}
+                                            <div className="p-4 flex-1 space-y-3 bg-white min-h-[200px]">
+                                                {techOrders.length === 0 ? (
+                                                    <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm py-8">
+                                                        <CheckSquare size={24} className="mb-2 opacity-20" />
+                                                        No active orders
+                                                    </div>
+                                                ) : (
+                                                    techOrders.map(order => (
+                                                        <div key={order.id} className="bg-slate-50 border border-slate-100 rounded-lg p-3 hover:border-brand-200 transition-colors group">
+                                                            <div className="flex justify-between items-start mb-2">
+                                                                <div>
+                                                                    <div className="font-mono text-[10px] font-bold text-slate-400">{order.id}</div>
+                                                                    <div className="font-bold text-slate-800 text-sm">{order.patientName}</div>
+                                                                </div>
+                                                                <StatusBadge status={order.status} />
+                                                            </div>
+
+                                                            <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100">
+                                                                <div className="text-[10px] text-slate-500 font-medium">
+                                                                    Due: {formatDate(order.dueDate)}
+                                                                </div>
+
+                                                                {/* Re-assign Dropdown (visible on hover/focus) */}
+                                                                <select
+                                                                    className="text-[10px] border border-slate-200 bg-white rounded p-1 outline-none focus:ring-1 focus:ring-brand-500 w-24 opacity-60 group-hover:opacity-100 transition-opacity"
+                                                                    value={tech.fullName}
+                                                                    onChange={(e) => handleAssignTechnician(order.id, e.target.value)}
+                                                                >
+                                                                    {users.filter(u => u.role === UserRole.TECHNICIAN).map(t => (
+                                                                        <option key={t.id} value={t.fullName}>{t.fullName}</option>
+                                                                    ))}
+                                                                    <option value="">Unassign</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 )}

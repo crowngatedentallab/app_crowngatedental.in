@@ -4,7 +4,7 @@
 ## 1. Executive Overview
 The **Crowngate Dental Lab Portal** is a specialized web application designed to streamline operations for Crowngate Dental Laboratory. It serves as a central command center connecting **Admins**, **Technicians**, and **Doctors**, replacing manual tracking with a digital, automated workflow.
 
-The system leverages **Google Sheets** as a flexible, zero-cost backend database, managed via a custom Google Apps Script API, ensuring data ownership and ease of backup.
+The system leverages **Firebase** as a robust, real-time backend database, ensuring scalability, speed, and reliability without the limitations of spreadsheet-based systems.
 
 ---
 
@@ -41,7 +41,7 @@ The backend uses **Firebase Firestore**, a NoSQL document database.
 Stores the core transactional data of the lab.
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `id` | String | Auto-generated Document ID |
+| `id` | String | Auto-generated Document ID (also used as display ID, e.g., ZC-1001) |
 | `patientName` | String | Name of the patient |
 | `doctorName` | String | Full name of the prescribing doctor |
 | `clinicName` | String | Clinic associated with the doctor |
@@ -63,12 +63,21 @@ Stores the core transactional data of the lab.
 | `password` | String | Login password |
 | `fullName` | String | Display name |
 | `role` | String | `ADMIN`, `DOCTOR`, `TECHNICIAN` |
+| `relatedEntity` | String | Clinic Name (for Doctors) or Specialization (for Techs) |
 
 ### 📦 collection: `products`
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `id` | String | Auto-generated Document ID |
 | `name` | String | Product Name |
+| `code` | String | 2-4 letter prefix (e.g., ZC) |
+| `isActive` | Boolean | Availability status |
+
+### 🔢 collection: `counters`
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `id` | String | Product Code (e.g., ZC) |
+| `lastSequence` | Number | Integer of the last used ID (e.g., 1001) |
 
 ---
 
@@ -80,8 +89,8 @@ Stores the core transactional data of the lab.
 
 ### Data Strategy
 *   **Firestore**: Primary source of truth.
-*   **Storage**: Firebase Storage used for file uploads (future).
-*   **Direct Access**: Services communicate directly with Firebase SDK.
+*   **Storage**: Firebase Storage used for file uploads.
+*   **Direct Access**: Services (firestoreService.ts) communicate directly with Firebase SDK.
 
 ---
 
@@ -94,11 +103,9 @@ Stores the core transactional data of the lab.
 *   **Charts**: [Recharts](https://recharts.org/) for data visualization.
 
 ### Backend Strategy (Serverless)
-*   **Database**: Google Sheets (Acts as the relational database).
-*   **API Layer**: Google Apps Script (Web App deployment) acting as a REST API.
-    *   `doGet()`: Handles data fetching.
-    *   `doPost()`: Handles updates, creation, and deletion.
-*   **Authentication**: Simple role-based routing (Frontend-enforced).
+*   **Database**: Firebase Firestore.
+*   **Storage**: Firebase Storage.
+*   **Hosting**: Firebase Hosting (Recommended) or Vercel.
 
 ---
 
@@ -111,8 +118,8 @@ Stores the core transactional data of the lab.
 ### Local Development
 1.  **Clone the repository**:
     ```bash
-    git clone https://github.com/crowngatedentallab/portal.git
-    cd portal
+    git clone https://github.com/crowngatedentallab/app_crowngatedental.in.git
+    cd app_crowngatedental.in
     ```
 
 2.  **Install dependencies**:
@@ -121,7 +128,7 @@ Stores the core transactional data of the lab.
     ```
 
 3.  **Configure Environment**:
-    *   Update `services/sheetService.ts` with your deployed **Google Apps Script Web App URL**.
+    *   Ensure `firebase.ts` contains your valid Firebase configuration keys.
 
 4.  **Run locally**:
     ```bash
@@ -131,13 +138,13 @@ Stores the core transactional data of the lab.
 
 ### Deployment
 *   **Build**: Run `npm run build` to generate the `dist` folder.
-*   **Host**: Deploy the `dist` folder to any static host (Vercel, Netlify, GitHub Pages).
+*   **Host**: Deploy the `dist` folder to Firebase Hosting, Vercel, or Netlify.
 
 ---
 
 ## 7. Security Note
 *   **Current State**: Password validation happens client-side for simplicity.
-*   **Recommendation**: For scaling, implement server-side JWT authentication and hashing.
+*   **Recommendation**: For scaling, implement Firebase Authentication (Identity Platform).
 
 ---
 

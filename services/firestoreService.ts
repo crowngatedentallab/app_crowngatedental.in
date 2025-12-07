@@ -174,22 +174,23 @@ export const firestoreService = {
         }
 
         const productsRef = collection(db, "products");
-        const prodSnapshot = await getDocs(productsRef);
-        if (prodSnapshot.empty) {
-            console.log("Seeding default products...");
-            const defaults = [
-                { name: "Zirconia Crown", code: "ZC" },
-                { name: "E-Max Veneer", code: "EMV" },
-                { name: "PFM Bridge", code: "PFM" },
-                { name: "Implant Abutment", code: "IMP" }
-            ];
-            for (const item of defaults) {
-                await addDoc(productsRef, {
-                    name: item.name,
-                    code: item.code,
-                    isActive: true
-                });
-            }
-        }
+        // Product seeding disabled per user request to allow custom list management
+        // const prodSnapshot = await getDocs(productsRef);
+        // if (prodSnapshot.empty) {
+        //     console.log("Seeding default products...");
+        //     const defaults = [
+        //         { name: "Zirconia Crown", code: "ZC" },
+        //         { name: "E-Max Veneer", code: "EMV" },
+        //         { name: "PFM Bridge", code: "PFM" },
+        //         { name: "Implant Abutment", code: "IMP" }
+        //     ];
+        //     for (const item of defaults) {
+        //         await addDoc(productsRef, { 
+        //             name: item.name, 
+        //             code: item.code, 
+        //             isActive: true 
+        //         });
+        //     }
+        // }
     }
 };

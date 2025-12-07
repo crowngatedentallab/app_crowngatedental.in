@@ -362,7 +362,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <button onClick={loadData} className="flex items-center space-x-2 bg-brand-700 text-white px-4 py-2 rounded shadow-sm hover:bg-brand-800 text-sm font-medium">
                     <RefreshCw size={16} />
-                    <span>Sync Sheets</span>
+                    <span>Refresh Data</span>
                 </button>
             </div>
 

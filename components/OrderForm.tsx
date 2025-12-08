@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User, Product } from '../types';
-// import { FileUploader } from './FileUploader'; // Disabled for now
+import { FileUploader } from './FileUploader';
 
 interface OrderFormProps {
     initialData?: Partial<Order>;
@@ -171,6 +171,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                     value={formData.notes}
                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
                 />
+            </div>
+
+            <div>
+                <FileUploader
+                    label="Attachments (Images / STL / PDF)"
+                    onUploadComplete={(url) => setFormData(prev => ({ ...prev, attachments: [...prev.attachments, url] }))}
+                />
+                {/* Show existing/new attachments list if needed, though FileUploader shows current session uploads. 
+                    Ideally we should verify if we need to show previously saved attachments here for EDIT mode. 
+                    The current FileUploader only shows 'uploadedFiles' state which is local. 
+                    For now, I will just add the uploader as requested. 
+                */}
             </div>
 
 

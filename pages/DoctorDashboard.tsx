@@ -5,6 +5,7 @@ import { Order, OrderStatus, User, Product } from '../types';
 import { Plus, Calendar, FileText, Lock, Loader2, X, RefreshCw } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { MobileNav } from '../components/MobileNav';
+import { FileUploader } from '../components/FileUploader';
 
 interface DoctorDashboardProps {
   user: User;
@@ -182,6 +183,13 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
                   <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Notes / Instructions</label>
                   <textarea rows={3} placeholder="Additional details..." className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
                     value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
+                </div>
+
+                <div className="md:col-span-2">
+                  <FileUploader
+                    label="Upload Attachments"
+                    onUploadComplete={(url) => setFormData(prev => ({ ...prev, attachments: [...prev.attachments, url] }))}
+                  />
                 </div>
                 <div className="md:col-span-2">
                   <label className="flex items-center space-x-2 cursor-pointer p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">

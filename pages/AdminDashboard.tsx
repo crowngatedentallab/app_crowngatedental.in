@@ -298,6 +298,10 @@ export const AdminDashboard: React.FC = () => {
 
     const sortedMonths = Object.entries(monthCounts).sort((a, b) => (b[1] as number) - (a[1] as number));
     const bestMonth = sortedMonths[0] || ['-', 0];
+
+    // 4. Today's Orders
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todaysOrdersCount = orders.filter(o => o.submissionDate === todayStr).length;
     const worstMonth = sortedMonths[sortedMonths.length - 1] || ['-', 0];
 
     // 4. Monthly Trend Chart (Count by Created Month)
@@ -428,59 +432,90 @@ export const AdminDashboard: React.FC = () => {
                         {/* NEW DASHBOARD LAYOUT */}
 
                         {/* ROW 1: NEW KPI CARDS */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                            {/* A. Best Performing Product Type */}
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
-                                <div className="p-3 bg-blue-50 text-blue-600 rounded-full mb-3">
-                                    <Award size={24} />
+                        {/* ROW 1: NEW KPI CARDS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
+                            {/* A. Today's Orders (NEW) */}
+                            <div className="bg-white p-3 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-row md:flex-col items-center justify-between md:justify-center text-left md:text-center">
+                                <div className="flex items-center gap-3 md:block">
+                                    <div className="p-2 md:p-3 bg-brand-50 text-brand-600 rounded-lg md:rounded-full mb-0 md:mb-3">
+                                        <ShoppingBag size={20} className="md:w-6 md:h-6" />
+                                    </div>
+                                    <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide md:hidden">Today's Orders</h3>
                                 </div>
-                                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Best Performing Product</h3>
-                                <div className="mt-2">
-                                    <span className="text-2xl font-bold text-slate-800 block">{bestProduct[0]}</span>
-                                    <span className="text-sm font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full mt-1 inline-block">
-                                        {bestProduct[1]} Orders
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* B. Best Turnaround Time */}
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
-                                <div className="p-3 bg-green-50 text-green-600 rounded-full mb-3">
-                                    <Clock size={24} />
-                                </div>
-                                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Best Turnaround Time</h3>
-                                <div className="mt-2">
-                                    <span className="text-xl font-bold text-slate-800 block">{bestTurnaroundProduct.name}</span>
-                                    <span className="text-sm font-medium text-slate-500">
-                                        Avg: {bestTurnaroundProduct.days === 0 ? '-' : bestTurnaroundProduct.days.toFixed(1)} Days
-                                    </span>
+                                <div className="text-right md:text-center">
+                                    <h3 className="hidden md:block text-sm font-medium text-slate-500 uppercase tracking-wide">Today's Orders</h3>
+                                    <div className="mt-0 md:mt-2">
+                                        <span className="text-lg md:text-2xl font-bold text-slate-800 block">{todaysOrdersCount}</span>
+                                        <span className="text-xs text-brand-600 font-medium md:text-sm md:bg-brand-50 md:px-2 md:py-0.5 md:rounded-full md:mt-1 md:inline-block">
+                                            New
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* C. Monthly Performance (REMOVED) */}
-                            {/* D. Top Doctor / Clinic (NEW) moved here if grid has space or kept as is, but we want 3 columns now? NO, keep grid wrapper, remove this card, chart goes below */}
-
-
-                            {/* D. Top Doctor / Clinic (NEW) */}
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
-                                <div className="p-3 bg-purple-50 text-purple-600 rounded-full mb-3">
-                                    <Users size={24} />
+                            {/* B. Best Performing Product Type */}
+                            <div className="bg-white p-3 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-row md:flex-col items-center justify-between md:justify-center text-left md:text-center">
+                                <div className="flex items-center gap-3 md:block">
+                                    <div className="p-2 md:p-3 bg-blue-50 text-blue-600 rounded-lg md:rounded-full mb-0 md:mb-3">
+                                        <Award size={20} className="md:w-6 md:h-6" />
+                                    </div>
+                                    <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide md:hidden">Top Product</h3>
                                 </div>
-                                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Top Doctor</h3>
-                                <div className="mt-2">
-                                    {topDoctors[0] ? (
-                                        <>
-                                            <span className="text-lg font-bold text-slate-800 block truncate max-w-[180px]">{topDoctors[0].name}</span>
-                                            <span className="text-xs text-slate-400 block mb-1">
-                                                {users.find(u => u.fullName === topDoctors[0].name)?.relatedEntity || 'Private Clinic'}
-                                            </span>
-                                            <span className="text-sm font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full mt-1 inline-block">
-                                                {topDoctors[0].count} Orders
-                                            </span>
-                                        </>
-                                    ) : (
-                                        <span className="text-slate-400 font-medium">No Data</span>
-                                    )}
+                                <div className="text-right md:text-center">
+                                    <h3 className="hidden md:block text-sm font-medium text-slate-500 uppercase tracking-wide">Best Performing Product</h3>
+                                    <div className="mt-0 md:mt-2">
+                                        <span className="text-lg md:text-2xl font-bold text-slate-800 block truncate max-w-[120px] md:max-w-none">{bestProduct[0]}</span>
+                                        <span className="text-xs text-blue-600 font-bold md:text-sm md:bg-blue-100 md:px-2 md:py-0.5 md:rounded-full md:mt-1 md:inline-block">
+                                            {bestProduct[1]} Orders
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* C. Best Turnaround Time */}
+                            <div className="bg-white p-3 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-row md:flex-col items-center justify-between md:justify-center text-left md:text-center">
+                                <div className="flex items-center gap-3 md:block">
+                                    <div className="p-2 md:p-3 bg-green-50 text-green-600 rounded-lg md:rounded-full mb-0 md:mb-3">
+                                        <Clock size={20} className="md:w-6 md:h-6" />
+                                    </div>
+                                    <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide md:hidden">Fastest Turnaround</h3>
+                                </div>
+                                <div className="text-right md:text-center">
+                                    <h3 className="hidden md:block text-sm font-medium text-slate-500 uppercase tracking-wide">Best Turnaround Time</h3>
+                                    <div className="mt-0 md:mt-2">
+                                        <span className="text-lg md:text-xl font-bold text-slate-800 block truncate max-w-[120px] md:max-w-none">{bestTurnaroundProduct.name}</span>
+                                        <span className="text-xs text-slate-500 font-medium md:text-sm">
+                                            {bestTurnaroundProduct.days === 0 ? '-' : bestTurnaroundProduct.days.toFixed(1)} Days
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* D. Top Doctor */}
+                            <div className="bg-white p-3 md:p-6 rounded-xl border border-slate-200 shadow-sm flex flex-row md:flex-col items-center justify-between md:justify-center text-left md:text-center">
+                                <div className="flex items-center gap-3 md:block">
+                                    <div className="p-2 md:p-3 bg-purple-50 text-purple-600 rounded-lg md:rounded-full mb-0 md:mb-3">
+                                        <Users size={20} className="md:w-6 md:h-6" />
+                                    </div>
+                                    <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide md:hidden">Top Doctor</h3>
+                                </div>
+                                <div className="text-right md:text-center">
+                                    <h3 className="hidden md:block text-sm font-medium text-slate-500 uppercase tracking-wide">Top Doctor</h3>
+                                    <div className="mt-0 md:mt-2">
+                                        {topDoctors[0] ? (
+                                            <>
+                                                <span className="text-lg md:text-lg font-bold text-slate-800 block truncate max-w-[120px] md:max-w-[180px]">{topDoctors[0].name}</span>
+                                                <span className="hidden md:block text-xs text-slate-400 mb-1">
+                                                    {users.find(u => u.fullName === topDoctors[0].name)?.relatedEntity || 'Private Clinic'}
+                                                </span>
+                                                <span className="text-xs text-purple-600 font-bold md:text-sm md:bg-purple-100 md:px-2 md:py-0.5 md:rounded-full md:mt-1 md:inline-block">
+                                                    {topDoctors[0].count} Orders
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span className="text-slate-400 font-medium">No Data</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

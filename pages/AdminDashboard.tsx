@@ -11,7 +11,11 @@ import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Cartes
 import { StatusBadge } from '../components/StatusBadge';
 import { PrintLabelModal } from '../components/PrintLabelModal';
 
-export const AdminDashboard: React.FC = () => {
+interface AdminDashboardProps {
+    initialOrderId?: string;
+}
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId }) => {
     // DATE FILTER STATE
     const currentYear = new Date().getFullYear();
     const [startDate, setStartDate] = useState(`${currentYear}-01-01`);
@@ -69,6 +73,21 @@ export const AdminDashboard: React.FC = () => {
         };
         init();
     }, [startDate, endDate]);
+
+    // HANDLE DEEP LINK (QR SCAN)
+    useEffect(() => {
+        if (initialOrderId && orders.length > 0) {
+            const targetOrder = orders.find(o => o.id === initialOrderId);
+            if (targetOrder) {
+                // Determine what to do: Open Edit Modal or Print Modal? 
+                // Default to Edit/View Modal as it shows info.
+                setEditingOrder(targetOrder);
+                setIsEditOrderModalOpen(true);
+                // Also switch to 'orders' tab
+                setActiveTab('orders');
+            }
+        }
+    }, [orders, initialOrderId]);
 
     const loadData = async () => {
         try {
@@ -401,9 +420,9 @@ export const AdminDashboard: React.FC = () => {
                     </h1>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-end md:items-center">
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-end md:items-center flex-wrap md:flex-nowrap">
                     {/* DATE FILTER */}
-                    <div className="flex items-center gap-2 bg-white p-1 rounded-md border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-2 bg-white p-1 rounded-md border border-slate-200 shadow-sm shrink-0">
                         <input
                             type="date"
                             className="text-xs md:text-sm border-none bg-transparent font-medium text-slate-600 focus:ring-0"
@@ -419,24 +438,24 @@ export const AdminDashboard: React.FC = () => {
                         />
                     </div>
 
-                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
+                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar flex-shrink">
 
                         {/* Desktop Tabs / Actions */}
-                        <div className="hidden md:flex bg-slate-100 p-1 rounded-md border border-slate-200 mr-4">
-                            <button onClick={() => setActiveTab('orders')} className={`flex items-center gap - 2 px - 3 py - 1.5 rounded text - sm font - medium transition - all ${activeTab === 'orders' ? 'bg-white shadow text-brand-900' : 'text-slate-500'} `}>
+                        <div className="hidden md:flex bg-slate-100 p-1 rounded-md border border-slate-200 flex-shrink-0">
+                            <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'orders' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
                                 <ShoppingBag size={14} /> Orders
                             </button>
-                            <button onClick={() => setActiveTab('products')} className={`flex items - center gap - 2 px - 3 py - 1.5 rounded text - sm font - medium transition - all ${activeTab === 'products' ? 'bg-white shadow text-brand-900' : 'text-slate-500'} `}>
+                            <button onClick={() => setActiveTab('products')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'products' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
                                 <CheckSquare size={14} /> Types
                             </button>
-                            <button onClick={() => setActiveTab('users')} className={`flex items - center gap - 2 px - 3 py - 1.5 rounded text - sm font - medium transition - all ${activeTab === 'users' ? 'bg-white shadow text-brand-900' : 'text-slate-500'} `}>
+                            <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
                                 <Users size={14} /> Users
                             </button>
-                            <button onClick={() => setActiveTab('workload')} className={`flex items - center gap - 2 px - 3 py - 1.5 rounded text - sm font - medium transition - all ${activeTab === 'workload' ? 'bg-white shadow text-brand-900' : 'text-slate-500'} `}>
+                            <button onClick={() => setActiveTab('workload')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'workload' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
                                 <BarChart size={14} /> Workload
                             </button>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 flex-shrink-0">
                             <button className="flex items-center gap-2 text-slate-500 hover:text-slate-700 bg-white p-2 px-3 rounded text-sm font-medium border border-slate-200 shadow-sm" onClick={loadData}>
                                 <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                                 <span className="hidden md:inline">Refresh</span>
@@ -686,7 +705,7 @@ export const AdminDashboard: React.FC = () => {
                                                         </select>
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
-                                                        <div className="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="flex justify-end gap-2">
                                                             <button onClick={() => { setPrintingOrder(order); setIsPrintModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-all" title="Print Label"><Printer size={16} /></button>
                                                             <button onClick={() => openEditOrderModal(order)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-all" title="Edit"><Pencil size={16} /></button>
                                                             <button onClick={() => handleOrderDelete(order.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all" title="Delete"><Trash2 size={16} /></button>

@@ -49,6 +49,23 @@ export default function App() {
     return <LoginPage onLoginSuccess={handleLogin} />;
   }
 
+  // Basic Routing for QR Scans
+  const [initialOrderId, setInitialOrderId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    // Check for URL path like /order/:id
+    const path = window.location.pathname;
+    if (path.startsWith('/order/')) {
+      const id = path.split('/')[2];
+      if (id) {
+        setInitialOrderId(id);
+        // Optional: Clean URL to avoid stuck state on reload? 
+        // window.history.replaceState({}, '', '/'); 
+        // Better to keep it so refresh works, but need to handle "already opened" logic in dashboard.
+      }
+    }
+  }, []);
+
   const renderView = () => {
     if (currentView === 'notifications') {
       return <NotificationsPage user={currentUser} onBack={() => setCurrentView('dashboard')} />;
@@ -59,11 +76,11 @@ export default function App() {
 
     switch (role) {
       case UserRole.ADMIN:
-        return <AdminDashboard />;
+        return <AdminDashboard initialOrderId={initialOrderId} />;
       case UserRole.DOCTOR:
-        return <DoctorDashboard user={currentUser} />;
+        return <DoctorDashboard user={currentUser} initialOrderId={initialOrderId} />;
       case UserRole.TECHNICIAN:
-        return <TechnicianView user={currentUser} />;
+        return <TechnicianView user={currentUser} initialOrderId={initialOrderId} />;
       default:
         return <div className="p-12 text-center text-red-500 font-bold">Error: Unknown User Role ({currentUser.role})</div>;
     }

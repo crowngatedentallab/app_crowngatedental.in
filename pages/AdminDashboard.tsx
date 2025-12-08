@@ -556,10 +556,9 @@ export const AdminDashboard: React.FC = () => {
                                 <table className="w-full text-sm text-left text-slate-600 min-w-[1000px]">
                                     <thead className="text-xs font-bold text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                                         <tr>
-                                            <th className="px-6 py-4 sticky left-0 bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">ID</th>
-                                            <th className="px-6 py-4">Date</th>
-                                            <th className="px-6 py-4">Patient</th>
-                                            <th className="px-6 py-4">Doctor</th>
+                                            <th className="px-6 py-4 sticky left-0 bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Order Info</th>
+                                            <th className="px-6 py-4">Patient / Doctor</th>
+                                            <th className="px-6 py-4">Tooth No</th>
                                             <th className="px-6 py-4">Type</th>
                                             <th className="px-6 py-4">Due</th>
                                             <th className="px-6 py-4">Status</th>
@@ -570,15 +569,26 @@ export const AdminDashboard: React.FC = () => {
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 bg-white">
                                         {filteredOrders.length === 0 ? (
-                                            <tr><td colSpan={10} className="text-center py-12 text-slate-400 font-medium">No orders found matching criteria.</td></tr>
+                                            <tr><td colSpan={9} className="text-center py-12 text-slate-400 font-medium">No orders found matching criteria.</td></tr>
                                         ) : (
                                             filteredOrders.map(order => (
                                                 <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
-                                                    <td className="px-6 py-4 font-mono text-xs font-medium text-brand-600 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-r border-transparent group-hover:border-slate-100">{order.id}</td>
-                                                    <td className="px-6 py-4 text-slate-500 text-xs">{formatDate(order.submissionDate)}</td>
-                                                    <td className="px-6 py-4 font-bold text-slate-900">{order.patientName}</td>
-                                                    <td className="px-6 py-4 text-slate-700 font-medium">{order.doctorName}</td>
-                                                    <td className="px-6 py-4 text-xs font-medium text-slate-600 bg-slate-50/50 rounded-lg">{order.productType || (order as any).typeOfWork || '-'}</td>
+                                                    <td className="px-6 py-4 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-r border-transparent group-hover:border-slate-100">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-mono text-xs font-bold text-brand-600">{order.id}</span>
+                                                            <span className="text-[10px] text-slate-400 font-medium mt-0.5">{formatDate(order.submissionDate)}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-slate-900 text-sm">{order.patientName}</span>
+                                                            <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
+                                                                Dr. {order.doctorName}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-xs font-bold text-slate-700 bg-slate-50/50 rounded-lg">{order.toothNumber || '-'}</td>
+                                                    <td className="px-6 py-4 text-xs font-medium text-slate-600">{order.productType || (order as any).typeOfWork || '-'}</td>
                                                     <td className="px-6 py-4 text-xs font-bold text-slate-700">{formatDate(order.dueDate)}</td>
                                                     <td className="px-6 py-4">
                                                         <select
@@ -635,8 +645,11 @@ export const AdminDashboard: React.FC = () => {
                                                 <StatusBadge status={order.status} />
                                             </div>
 
-                                            <div className="mb-3">
+                                            <div className="mb-3 flex flex-wrap gap-2">
                                                 <span className="inline-block bg-brand-50 text-brand-700 text-xs font-bold px-2 py-1 rounded">{order.productType}</span>
+                                                {order.toothNumber && (
+                                                    <span className="inline-block bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded">Avg #{order.toothNumber}</span>
+                                                )}
                                             </div>
 
                                             <div className="flex justify-between items-end mt-2 pt-3 border-t border-slate-50">

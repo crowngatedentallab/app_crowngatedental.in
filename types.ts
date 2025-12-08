@@ -58,6 +58,7 @@ export interface Order {
   attachments?: string[]; // URLs of uploaded files
   assignedDate?: string; // ISO String when technician was assigned
   completedDate?: string; // ISO string when status becomes Dispatched/Delivered
+  printHistory?: { timestamp: string; size: string }[]; // Track label prints
 }
 
 export interface DashboardStats {

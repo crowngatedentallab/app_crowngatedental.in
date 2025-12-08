@@ -6,9 +6,10 @@ import { Modal } from '../components/Modal';
 import { OrderForm } from '../components/OrderForm';
 import { UserForm } from '../components/UserForm';
 import { MobileNav } from '../components/MobileNav';
-import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil, Plus, Stethoscope, Smile, Hammer, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil, Plus, Stethoscope, Smile, Hammer, ChevronDown, ChevronUp, Printer } from 'lucide-react';
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { StatusBadge } from '../components/StatusBadge';
+import { PrintLabelModal } from '../components/PrintLabelModal';
 
 export const AdminDashboard: React.FC = () => {
     // DATE FILTER STATE
@@ -36,6 +37,8 @@ export const AdminDashboard: React.FC = () => {
     const [editingOrder, setEditingOrder] = useState<Order | undefined>(undefined);
     const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
     const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+    const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+    const [printingOrder, setPrintingOrder] = useState<Order | undefined>(undefined);
 
     // FILTERS STATE
     const [filterType, setFilterType] = useState('All');
@@ -223,6 +226,24 @@ export const AdminDashboard: React.FC = () => {
         } catch (error) {
             console.error("Failed to update status", error);
             alert("Failed to update status");
+        }
+    };
+
+    const handlePrintRecord = async (size: string) => {
+        if (!printingOrder) return;
+        const historyEntry = { timestamp: new Date().toISOString(), size };
+        // Optimistic UI update - we don't need to reload data for this, just assume it works or wait for next load
+        // But if we want to show it immediately we could update state.
+        // For now just fire and forget to backend
+        try {
+            // We need to fetch current history first or just use arrayUnion if firestoreService supported it directly properly 
+            // But our updateOrder is a simple spread. 
+            // Let's just create a new array.
+            const currentHistory = printingOrder.printHistory || [];
+            const updatedHistory = [...currentHistory, historyEntry];
+            await firestoreService.updateOrder(printingOrder.id, { printHistory: updatedHistory });
+        } catch (e) {
+            console.error("Failed to save print history", e);
         }
     };
 
@@ -666,6 +687,7 @@ export const AdminDashboard: React.FC = () => {
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => { setPrintingOrder(order); setIsPrintModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-all" title="Print Label"><Printer size={16} /></button>
                                                             <button onClick={() => openEditOrderModal(order)} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-all" title="Edit"><Pencil size={16} /></button>
                                                             <button onClick={() => handleOrderDelete(order.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all" title="Delete"><Trash2 size={16} /></button>
                                                         </div>
@@ -728,6 +750,9 @@ export const AdminDashboard: React.FC = () => {
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
+                                                    <button onClick={() => { setPrintingOrder(order); setIsPrintModalOpen(true); }} className="p-2 bg-white text-slate-400 hover:text-slate-800 border border-slate-200 rounded shadow-sm">
+                                                        <Printer size={16} />
+                                                    </button>
                                                     <button onClick={() => openEditOrderModal(order)} className="p-2 bg-white text-slate-400 hover:text-brand-600 border border-slate-200 rounded shadow-sm">
                                                         <Pencil size={16} />
                                                     </button>
@@ -1094,6 +1119,16 @@ export const AdminDashboard: React.FC = () => {
             <Modal isOpen={isEditUserModalOpen} onClose={() => setIsEditUserModalOpen(false)} title="Edit User">
                 <UserForm onSubmit={handleEditUserSubmit} initialData={editingUser} />
             </Modal>
+
+            {/* PRINT LABEL MODAL */}
+            {printingOrder && (
+                <PrintLabelModal
+                    isOpen={isPrintModalOpen}
+                    onClose={() => { setIsPrintModalOpen(false); setPrintingOrder(undefined); }}
+                    order={printingOrder}
+                    onPrintRecord={handlePrintRecord}
+                />
+            )}
 
             {/* MOBILE NAVIGATION BAR (Bottom Fixed) */}
             <MobileNav activeTab={activeTab} onTabChange={(t) => setActiveTab(t as any)} userRole="ADMIN" />

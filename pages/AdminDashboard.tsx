@@ -688,7 +688,7 @@ export const AdminDashboard: React.FC = () => {
                         <div className="flex gap-2 mb-4 md:hidden">
                             <input type="text" placeholder="Search..." value={productSearchTerm} onChange={e => setProductSearchTerm(e.target.value)} className="w-full border rounded px-3 py-2 text-sm" />
                         </div>
-                        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden mb-20">
+                        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden mb-6">
                             {/* DESKTOP HEADER */}
                             <div className="hidden md:flex p-4 border-b border-slate-200 bg-slate-50 justify-between items-center">
                                 <h2 className="font-bold text-slate-800">Restoration Types</h2>
@@ -697,7 +697,61 @@ export const AdminDashboard: React.FC = () => {
                                 </button>
                             </div>
 
-                            {/* LIST */}
+                            {/* DESKTOP TABLE */}
+                            <div className="hidden md:block overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                                        <tr>
+                                            <th className="px-6 py-3">Product Name</th>
+                                            <th className="px-6 py-3 w-1/4">Code</th>
+                                            <th className="px-6 py-3 w-32 text-center">Seq #</th>
+                                            <th className="px-6 py-3 text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {products.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
+                                                    No products found. Click "Add Product" to create one.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            products.filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase())).map(product => (
+                                                <tr key={product.id} className="hover:bg-slate-50">
+                                                    <td className="px-6 py-3">
+                                                        <EditableField
+                                                            value={product.name}
+                                                            onSave={(val) => handleProductUpdate(product.id, val)}
+                                                            className="font-bold text-slate-700"
+                                                        />
+                                                    </td>
+                                                    <td className="px-6 py-3">
+                                                        <EditableField
+                                                            value={product.code || 'N/A'}
+                                                            onSave={(val) => handleProductCodeUpdate(product.id, val)}
+                                                            className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs text-slate-600"
+                                                        />
+                                                    </td>
+                                                    <td className="px-6 py-3 text-center">
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <button onClick={() => handleProductCounterUpdate(product.code, String((productCounters[product.code] || 0) - 1))} className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200 text-slate-500">-</button>
+                                                            <span className="w-8 text-center font-mono font-bold text-slate-700">{productCounters[product.code] || 0}</span>
+                                                            <button onClick={() => handleProductCounterUpdate(product.code, String((productCounters[product.code] || 0) + 1))} className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200 text-slate-500">+</button>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-3 text-right">
+                                                        <button onClick={() => handleDeleteProduct(product.id)} className="text-slate-300 hover:text-red-500 p-1.5 hover:bg-red-50 rounded transition-colors" title="Delete Product">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* MOBILE LIST */}
                             <div className="md:hidden divide-y divide-slate-100">
                                 {products.filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase())).map(product => (
                                     <div key={product.id} className="p-4 flex justify-between items-center bg-white">

@@ -190,33 +190,50 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({ isOpen, onClos
                             }}
                         >
                             {/* PRINT CONTENT */}
-                            <div className="flex-1 flex flex-col justify-between h-full border-2 border-black p-2">
+                            <div className="flex-1 flex flex-col h-full border-2 border-black p-1.5">
                                 {/* Header */}
-                                <div className="text-center border-b-2 border-black pb-1 mb-2">
+                                <div className="text-center border-b-2 border-black pb-1 mb-1.5">
                                     <h1 className="font-bold text-[10pt] leading-tight uppercase tracking-wider">Crowngate Dental Lab</h1>
                                 </div>
 
                                 {/* Body */}
-                                <div className="flex-1 flex gap-2">
-                                    <div className="flex-1 text-[8pt] font-bold space-y-1">
-                                        <div><span className="font-normal text-[7pt]">Clinic Name (Entity):</span><div className="line-clamp-2 uppercase">{order.doctorName.replace(/^Dr\.\s*/i, '')}</div></div>
-                                        <div><span className="font-normal text-[7pt]">Patient Name:</span><div className="line-clamp-1 uppercase">{order.patientName}</div></div>
-                                        <div><span className="font-normal text-[7pt]">Type of Work:</span><div className="line-clamp-2 uppercase">{order.productType || (order as any).typeOfWork}</div></div>
-                                        <div><span className="font-normal text-[7pt]">Case ID:</span><div className="font-mono text-[9pt]">{order.id}</div></div>
-                                        <div><span className="font-normal text-[7pt]">Date of Delivery:</span><div>{order.dueDate.split('-').reverse().join('-')}</div></div>
+                                <div className="flex-1 flex gap-2 min-h-0">
+                                    <div className="flex-1 text-[9pt] font-bold space-y-1.5 overflow-hidden">
+                                        <div>
+                                            <span className="font-normal text-[7pt] block text-slate-600">Clinic Name (Entity):</span>
+                                            <div className="line-clamp-2 uppercase leading-tight">{order.clinicName || order.relatedEntity || order.doctorName}</div>
+                                        </div>
+                                        <div>
+                                            <span className="font-normal text-[7pt] block text-slate-600">Patient Name:</span>
+                                            <div className="line-clamp-1 uppercase leading-tight">{order.patientName}</div>
+                                        </div>
+                                        <div>
+                                            <span className="font-normal text-[7pt] block text-slate-600">Type of Work:</span>
+                                            <div className="line-clamp-2 uppercase leading-tight">{order.productType || (order as any).typeOfWork}</div>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <div>
+                                                <span className="font-normal text-[7pt] block text-slate-600">Case ID:</span>
+                                                <div className="font-mono text-[10pt] leading-tight">{order.id}</div>
+                                            </div>
+                                            <div>
+                                                <span className="font-normal text-[7pt] block text-slate-600">Delivery:</span>
+                                                <div className="leading-tight">{order.dueDate.split('-').reverse().join('-')}</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col items-end justify-start">
+                                    <div className="flex flex-col items-center flex-shrink-0 pt-1">
                                         <QRCodeSVG
                                             value={`https://app.crowngatedental.in/order/${order.id}`}
-                                            size={60}
-                                            level="L"
+                                            size={70}
+                                            level="M"
                                         />
-                                        <div className="text-[6pt] text-center w-full mt-1 font-mono">{order.id}</div>
+                                        <div className="text-[7pt] text-center w-full mt-1 font-mono font-bold">{order.id}</div>
                                     </div>
                                 </div>
 
                                 {/* Footer */}
-                                <div className="mt-1 pt-1 border-t border-black text-[6pt] text-center font-bold">
+                                <div className="mt-auto pt-1 border-t border-black text-[7pt] text-center font-bold">
                                     PREMIUM QUALITY DENTAL RESTORATIONS
                                 </div>
                             </div>

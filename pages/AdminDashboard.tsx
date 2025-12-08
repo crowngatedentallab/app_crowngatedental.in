@@ -341,7 +341,7 @@ export const AdminDashboard: React.FC = () => {
     };
 
     return (
-        <div className="pb-20 md:pb-0 min-h-screen bg-slate-50/50">
+        <div className="pb-20 md:pb-0 min-h-screen bg-slate-50/50 pt-16">
             {/* Header / Control Bar (Sticky on Desktop) */}
             <div className="bg-white/80 backdrop-blur-md border border-white/20 px-4 md:px-8 py-3 mb-2 md:mb-4 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shadow-sm sticky top-16 z-30">
                 <div>
@@ -620,7 +620,7 @@ export const AdminDashboard: React.FC = () => {
                 {activeTab === 'users' && (
                     <>
                         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden mb-6">
-                            <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
                                 <h2 className="font-bold text-slate-800">User Directory</h2>
                                 <button onClick={() => setIsUserModalOpen(true)} className="hidden md:flex bg-brand-600 text-white px-3 py-1.5 rounded text-sm font-bold items-center gap-2">
                                     <PlusCircle size={16} /> Add User
@@ -689,10 +689,10 @@ export const AdminDashboard: React.FC = () => {
                             <input type="text" placeholder="Search..." value={productSearchTerm} onChange={e => setProductSearchTerm(e.target.value)} className="w-full border rounded px-3 py-2 text-sm" />
                         </div>
                         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden mb-6">
-                            {/* DESKTOP HEADER */}
-                            <div className="hidden md:flex p-4 border-b border-slate-200 bg-slate-50 justify-between items-center">
+                            {/* HEADER */}
+                            <div className="flex px-6 py-4 border-b border-slate-200 bg-slate-50 justify-between items-center">
                                 <h2 className="font-bold text-slate-800">Restoration Types</h2>
-                                <button onClick={() => setIsProductModalOpen(true)} className="bg-brand-600 text-white px-3 py-1.5 rounded text-sm font-bold flex items-center gap-2">
+                                <button onClick={() => setIsProductModalOpen(true)} className="hidden md:flex bg-brand-600 text-white px-3 py-1.5 rounded text-sm font-bold items-center gap-2">
                                     <PlusCircle size={16} /> Add Product
                                 </button>
                             </div>

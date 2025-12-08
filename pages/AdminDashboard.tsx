@@ -523,13 +523,14 @@ export const AdminDashboard: React.FC = () => {
                                             <th className="px-6 py-4">Type</th>
                                             <th className="px-6 py-4">Due</th>
                                             <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4">Unit</th>
                                             <th className="px-6 py-4">Assigned Tech</th>
                                             <th className="px-6 py-4 text-right">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 bg-white">
                                         {filteredOrders.length === 0 ? (
-                                            <tr><td colSpan={9} className="text-center py-12 text-slate-400 font-medium">No orders found matching criteria.</td></tr>
+                                            <tr><td colSpan={10} className="text-center py-12 text-slate-400 font-medium">No orders found matching criteria.</td></tr>
                                         ) : (
                                             filteredOrders.map(order => (
                                                 <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
@@ -540,6 +541,7 @@ export const AdminDashboard: React.FC = () => {
                                                     <td className="px-6 py-4 text-xs font-medium text-slate-600 bg-slate-50/50 rounded-lg">{order.productType || (order as any).typeOfWork || '-'}</td>
                                                     <td className="px-6 py-4 text-xs font-bold text-slate-700">{formatDate(order.dueDate)}</td>
                                                     <td className="px-6 py-4"><StatusBadge status={order.status} /></td>
+                                                    <td className="px-6 py-4 text-slate-700 font-medium text-xs">{order.unit || 'N/A'}</td>
                                                     <td className="px-6 py-4">
                                                         <select
                                                             className="text-xs border border-slate-200 rounded p-1.5 bg-white focus:ring-2 focus:ring-brand-500 outline-none hover:border-slate-300 transition-colors cursor-pointer w-32"

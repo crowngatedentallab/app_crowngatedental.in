@@ -5,7 +5,7 @@ import { Order, OrderStatus, User, Product } from '../types';
 import { Plus, Calendar, FileText, Lock, Loader2, X, RefreshCw } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { MobileNav } from '../components/MobileNav';
-import { FileUploader } from '../components/FileUploader';
+import { MobileNav } from '../components/MobileNav';
 
 interface DoctorDashboardProps {
   user: User;
@@ -19,6 +19,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
   const [formData, setFormData] = useState({
     patientName: '',
     toothNumber: '',
+    unit: '',
     productType: '', // Will default to first product
     shade: '',
     dueDate: '',
@@ -69,6 +70,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
       setFormData({
         patientName: '',
         toothNumber: '',
+        unit: '',
         productType: products[0]?.name || '',
         shade: '',
         dueDate: '',
@@ -161,10 +163,17 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
                       value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: e.target.value })} />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Tooth #</label>
-                  <input placeholder="e.g. 11, 21" type="text" className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
-                    value={formData.toothNumber} onChange={e => setFormData({ ...formData, toothNumber: e.target.value })} />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Tooth #</label>
+                    <input placeholder="e.g. 11, 21" type="text" className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                      value={formData.toothNumber} onChange={e => setFormData({ ...formData, toothNumber: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Unit</label>
+                    <input placeholder="e.g. 1" type="text" className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                      value={formData.unit} onChange={e => setFormData({ ...formData, unit: e.target.value })} />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Shade</label>
@@ -183,13 +192,6 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
                   <label className="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-1.5">Notes / Instructions</label>
                   <textarea rows={3} placeholder="Additional details..." className="w-full bg-slate-50 border border-slate-300 rounded p-2.5 text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
                     value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
-                </div>
-
-                <div className="md:col-span-2">
-                  <FileUploader
-                    label="Upload Attachments"
-                    onUploadComplete={(url) => setFormData(prev => ({ ...prev, attachments: [...prev.attachments, url] }))}
-                  />
                 </div>
                 <div className="md:col-span-2">
                   <label className="flex items-center space-x-2 cursor-pointer p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">

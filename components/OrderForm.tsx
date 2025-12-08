@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User, Product } from '../types';
-import { FileUploader } from './FileUploader';
+import { Order, OrderStatus, User, Product } from '../types';
 
 interface OrderFormProps {
     initialData?: Partial<Order>;
@@ -20,6 +20,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
         doctorName: initialData?.doctorName || '',
         clinicName: initialData?.clinicName || '',
         toothNumber: initialData?.toothNumber || '',
+        unit: initialData?.unit || '',
         shade: initialData?.shade || '',
         productType: initialData?.productType || '',
         dueDate: initialData?.dueDate || '',
@@ -127,7 +128,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
                 <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Tooth No.</label>
                     <input
@@ -137,6 +138,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                         className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
                         value={formData.toothNumber}
                         onChange={e => setFormData({ ...formData, toothNumber: e.target.value })}
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Unit</label>
+                    <input
+                        type="text"
+                        placeholder="e.g. 1"
+                        className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                        value={formData.unit}
+                        onChange={e => setFormData({ ...formData, unit: e.target.value })}
                     />
                 </div>
                 <div>
@@ -172,20 +183,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialData, onSubmit, onC
                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
                 />
             </div>
-
-            <div>
-                <FileUploader
-                    label="Attachments (Images / STL / PDF)"
-                    onUploadComplete={(url) => setFormData(prev => ({ ...prev, attachments: [...prev.attachments, url] }))}
-                />
-                {/* Show existing/new attachments list if needed, though FileUploader shows current session uploads. 
-                    Ideally we should verify if we need to show previously saved attachments here for EDIT mode. 
-                    The current FileUploader only shows 'uploadedFiles' state which is local. 
-                    For now, I will just add the uploader as requested. 
-                */}
-            </div>
-
-
 
             <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
                 <button

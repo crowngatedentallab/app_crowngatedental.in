@@ -45,6 +45,7 @@ export interface Order {
   doctorName: string; // Links to User.fullName or User.id
   clinicName?: string;
   toothNumber: string;
+  unit?: string;
   shade: string;
   productType: string; // e.g., Zirconia, E-Max
   status: OrderStatus;

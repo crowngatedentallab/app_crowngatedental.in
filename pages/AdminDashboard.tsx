@@ -201,6 +201,16 @@ export const AdminDashboard: React.FC = () => {
         }
     };
 
+    const handleStatusUpdate = async (id: string, newStatus: string) => {
+        try {
+            await firestoreService.updateOrder(id, { status: newStatus as OrderStatus });
+            setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus as OrderStatus } : o));
+        } catch (error) {
+            console.error("Failed to update status", error);
+            alert("Failed to update status");
+        }
+    };
+
     // --- FILTER LOGIC ---
     // --- FILTER LOGIC ---
     const filteredOrders = orders.filter(order => {
@@ -540,7 +550,17 @@ export const AdminDashboard: React.FC = () => {
                                                     <td className="px-6 py-4 text-slate-700 font-medium">{order.doctorName}</td>
                                                     <td className="px-6 py-4 text-xs font-medium text-slate-600 bg-slate-50/50 rounded-lg">{order.productType || (order as any).typeOfWork || '-'}</td>
                                                     <td className="px-6 py-4 text-xs font-bold text-slate-700">{formatDate(order.dueDate)}</td>
-                                                    <td className="px-6 py-4"><StatusBadge status={order.status} /></td>
+                                                    <td className="px-6 py-4">
+                                                        <select
+                                                            className="text-xs border border-slate-200 rounded p-1.5 bg-white focus:ring-2 focus:ring-brand-500 outline-none hover:border-slate-300 transition-colors cursor-pointer w-36 font-medium text-slate-700"
+                                                            value={order.status}
+                                                            onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                                                        >
+                                                            {Object.values(OrderStatus).map(s => (
+                                                                <option key={s} value={s}>{s}</option>
+                                                            ))}
+                                                        </select>
+                                                    </td>
                                                     <td className="px-6 py-4 text-slate-700 font-medium text-xs">{order.unit || 'N/A'}</td>
                                                     <td className="px-6 py-4">
                                                         <select

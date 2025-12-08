@@ -331,7 +331,6 @@ export const AdminDashboard: React.FC = () => {
         .map(([name, count]) => ({ name, count: count as number }));
 
     // --- WORKLOAD DATA ---
-    // Technician Workload Table Data
     const technicianWorkload = users
         .filter(u => u.role === UserRole.TECHNICIAN)
         .map(tech => {
@@ -399,16 +398,16 @@ export const AdminDashboard: React.FC = () => {
 
                         {/* Desktop Tabs / Actions */}
                         <div className="hidden md:flex bg-slate-100 p-1 rounded-md border border-slate-200 mr-4">
-                            <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'orders' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
+                            <button onClick={() => setActiveTab('orders')} className={`flex items-center gap - 2 px - 3 py - 1.5 rounded text - sm font - medium transition - all ${activeTab === 'orders' ? 'bg-white shadow text-brand-900' : 'text-slate-500'} `}>
                                 <ShoppingBag size={14} /> Orders
                             </button>
-                            <button onClick={() => setActiveTab('products')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'products' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
+                            <button onClick={() => setActiveTab('products')} className={`flex items - center gap - 2 px - 3 py - 1.5 rounded text - sm font - medium transition - all ${activeTab === 'products' ? 'bg-white shadow text-brand-900' : 'text-slate-500'} `}>
                                 <CheckSquare size={14} /> Types
                             </button>
-                            <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
+                            <button onClick={() => setActiveTab('users')} className={`flex items - center gap - 2 px - 3 py - 1.5 rounded text - sm font - medium transition - all ${activeTab === 'users' ? 'bg-white shadow text-brand-900' : 'text-slate-500'} `}>
                                 <Users size={14} /> Users
                             </button>
-                            <button onClick={() => setActiveTab('workload')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'workload' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
+                            <button onClick={() => setActiveTab('workload')} className={`flex items - center gap - 2 px - 3 py - 1.5 rounded text - sm font - medium transition - all ${activeTab === 'workload' ? 'bg-white shadow text-brand-900' : 'text-slate-500'} `}>
                                 <BarChart size={14} /> Workload
                             </button>
                         </div>
@@ -504,7 +503,7 @@ export const AdminDashboard: React.FC = () => {
                                         <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
                                         <Bar dataKey="cases" radius={[4, 4, 0, 0]} maxBarSize={50}>
                                             {monthlyData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.cases === Math.max(...monthlyData.map(d => d.cases)) && entry.cases > 0 ? '#10b981' : entry.cases === Math.min(...monthlyData.map(d => d.cases)) && entry.cases > 0 ? '#ef4444' : '#6366f1'} />
+                                                <Cell key={`cell - ${index} `} fill={entry.cases === Math.max(...monthlyData.map(d => d.cases)) && entry.cases > 0 ? '#10b981' : entry.cases === Math.min(...monthlyData.map(d => d.cases)) && entry.cases > 0 ? '#ef4444' : '#6366f1'} />
                                             ))}
                                         </Bar>
                                     </BarChart>
@@ -564,7 +563,7 @@ export const AdminDashboard: React.FC = () => {
 
 
                             {/* DESKTOP TABLE */}
-                            <div className="overflow-x-auto border-t border-slate-200">
+                            <div className="hidden md:block overflow-x-auto border-t border-slate-200">
                                 <table className="w-full text-sm text-left text-slate-600 min-w-[1000px]">
                                     <thead className="text-xs font-bold text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                                         <tr>
@@ -894,7 +893,11 @@ export const AdminDashboard: React.FC = () => {
                                                 <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{formatDate(order.dueDate)}</span>
                                             </div>
                                             <h3 className="font-bold text-slate-800 mb-1 truncate">{order.patientName}</h3>
-                                            <div className="text-xs text-brand-600 font-medium mb-3">{order.productType || (order as any).typeOfWork}</div>
+                                            <div className="text-xs text-brand-600 font-medium mb-0.5">{order.productType || (order as any).typeOfWork}</div>
+                                            <div className="text-[10px] text-slate-500 mb-3 truncate flex items-center gap-1">
+                                                <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                                                {order.clinicName || 'No Clinic'}
+                                            </div>
 
                                             <div className="mt-2">
                                                 <select
@@ -960,6 +963,9 @@ export const AdminDashboard: React.FC = () => {
                                                                     <div>
                                                                         <div className="font-mono text-[10px] font-bold text-slate-400 mb-0.5">{order.id}</div>
                                                                         <div className="font-bold text-slate-800 text-sm">{order.patientName}</div>
+                                                                        <div className="text-[10px] text-slate-500 font-medium mt-0.5 truncate max-w-[120px]">
+                                                                            {order.productType} • {order.clinicName || 'No Clinic'}
+                                                                        </div>
                                                                     </div>
                                                                     <StatusBadge status={order.status} />
                                                                 </div>

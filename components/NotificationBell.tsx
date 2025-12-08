@@ -71,7 +71,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ user }) => {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-xl border border-slate-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                     <div className="p-3 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
                         <h3 className="font-bold text-xs uppercase text-slate-500 tracking-wider">Notifications</h3>
                         {unreadCount > 0 && <span className="text-[10px] bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded font-bold">{unreadCount} new</span>}

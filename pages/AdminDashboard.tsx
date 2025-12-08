@@ -679,6 +679,18 @@ export const AdminDashboard: React.FC = () => {
                                                     <div className="flex items-center gap-1.5 font-medium text-slate-700">
                                                         <Calendar size={12} className="text-slate-400" /> Due: {formatDate(order.dueDate)}
                                                     </div>
+                                                    <div className="mt-2">
+                                                        <select
+                                                            className="text-xs border border-slate-200 rounded p-1.5 bg-slate-50 outline-none focus:ring-1 focus:ring-brand-500 w-full max-w-[150px]"
+                                                            value={order.assignedTech || ''}
+                                                            onChange={(e) => handleAssignTechnician(order.id, e.target.value)}
+                                                        >
+                                                            <option value="">Unassigned</option>
+                                                            {users.filter(u => u.role === UserRole.TECHNICIAN).map(tech => (
+                                                                <option key={tech.id} value={tech.fullName}>{tech.fullName}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => openEditOrderModal(order)} className="p-2 bg-white text-slate-400 hover:text-brand-600 border border-slate-200 rounded shadow-sm">

@@ -677,7 +677,7 @@ export const AdminDashboard: React.FC = () => {
                                 ))}
                             </div>
                         </div>
-                        <button onClick={() => setIsUserModalOpen(true)} className="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg flex items-center justify-center z-50">
+                        <button onClick={() => setIsUserModalOpen(true)} className="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg flex items-center justify-center z-[60] active:scale-95 transition-transform">
                             <Plus size={28} />
                         </button>
                     </>
@@ -698,27 +698,31 @@ export const AdminDashboard: React.FC = () => {
                             </div>
 
                             {/* LIST */}
-                            <div className="divide-y divide-slate-100">
+                            <div className="md:hidden divide-y divide-slate-100">
                                 {products.filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase())).map(product => (
-                                    <div key={product.id} className="p-4 flex items-center gap-4 hover:bg-slate-50">
-                                        <div className="flex-1">
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Product Name</div>
-                                            <EditableField value={product.name} onSave={(val) => handleProductUpdate(product.id, val)} />
+                                    <div key={product.id} className="p-4 flex justify-between items-center bg-white">
+                                        <div>
+                                            <div className="font-bold text-slate-900">{product.name}</div>
+                                            <div className="text-xs font-mono text-slate-400 mt-0.5">{product.code}</div>
                                         </div>
-                                        <div className="w-20 md:w-32">
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Code</div>
-                                            <EditableField value={product.code || 'N/A'} onSave={(val) => handleProductCodeUpdate(product.id, val)} className="font-mono bg-slate-100 px-2 rounded text-xs" />
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center bg-slate-100 rounded overflow-hidden border border-slate-200">
+                                                <button onClick={() => handleProductCounterUpdate(product.code, String((productCounters[product.code] || 0) - 1))} className="px-2 py-1 hover:bg-slate-200 text-slate-600">-</button>
+                                                <span className="px-2 text-xs font-mono font-bold w-8 text-center">{productCounters[product.code] || 0}</span>
+                                                <button onClick={() => handleProductCounterUpdate(product.code, String((productCounters[product.code] || 0) + 1))} className="px-2 py-1 hover:bg-slate-200 text-slate-600">+</button>
+                                            </div>
+                                            <button onClick={() => handleDeleteProduct(product.id)} className="text-slate-300 hover:text-red-500 p-1"><Trash2 size={18} /></button>
                                         </div>
-                                        <div className="w-16 md:w-24 text-center">
-                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Seq #</div>
-                                            <EditableField value={(productCounters[product.code || ''] || 0).toString()} onSave={(val) => handleProductCounterUpdate(product.code || '', val)} className="font-mono bg-slate-100 px-2 rounded text-center text-xs" />
-                                        </div>
-                                        <button onClick={() => handleDeleteProduct(product.id)} className="text-slate-300 hover:text-red-500 pt-3"><Trash2 size={16} /></button>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                        <button onClick={() => setIsProductModalOpen(true)} className="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg flex items-center justify-center z-50">
+
+                        {/* Sticky FAB for Products */}
+                        <button
+                            onClick={() => setIsProductModalOpen(true)}
+                            className="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-brand-600 text-white rounded-full shadow-lg shadow-brand-600/30 flex items-center justify-center z-[60] hover:bg-brand-700 active:scale-95 transition-all"
+                        >
                             <Plus size={28} />
                         </button>
                     </>

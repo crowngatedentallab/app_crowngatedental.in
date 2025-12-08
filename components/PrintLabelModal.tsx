@@ -106,8 +106,8 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({ isOpen, onClos
                                     key={size.id}
                                     onClick={() => setSelectedSize(size)}
                                     className={`w-full text-left px-4 py-3 rounded-lg border transition-all ${selectedSize.id === size.id
-                                            ? 'bg-brand-50 border-brand-500 text-brand-700 shadow-sm ring-1 ring-brand-500'
-                                            : 'bg-white border-slate-200 text-slate-600 hover:border-brand-300'
+                                        ? 'bg-brand-50 border-brand-500 text-brand-700 shadow-sm ring-1 ring-brand-500'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:border-brand-300'
                                         }`}
                                 >
                                     <div className="font-bold">{size.name}</div>
@@ -199,17 +199,16 @@ export const PrintLabelModal: React.FC<PrintLabelModalProps> = ({ isOpen, onClos
                                 {/* Body */}
                                 <div className="flex-1 flex gap-2">
                                     <div className="flex-1 text-[8pt] font-bold space-y-1">
-                                        <div>CASE: <span className="font-mono text-[10pt]">{order.id}</span></div>
-                                        <div className="line-clamp-2">DR: {order.doctorName.replace(/^Dr\.\s*/i, '')}</div>
-                                        <div className="line-clamp-1">PT: {order.patientName}</div>
-                                        <div className="line-clamp-2">WORK: {order.productType || 'Dental Case'}</div>
-                                        {order.toothNumber && <div>TEETH: {order.toothNumber}</div>}
-                                        <div>DUE: {order.dueDate.split('-').reverse().join('-')}</div>
+                                        <div><span className="font-normal text-[7pt]">Clinic Name (Entity):</span><div className="line-clamp-2 uppercase">{order.doctorName.replace(/^Dr\.\s*/i, '')}</div></div>
+                                        <div><span className="font-normal text-[7pt]">Patient Name:</span><div className="line-clamp-1 uppercase">{order.patientName}</div></div>
+                                        <div><span className="font-normal text-[7pt]">Type of Work:</span><div className="line-clamp-2 uppercase">{order.productType || (order as any).typeOfWork}</div></div>
+                                        <div><span className="font-normal text-[7pt]">Case ID:</span><div className="font-mono text-[9pt]">{order.id}</div></div>
+                                        <div><span className="font-normal text-[7pt]">Date of Delivery:</span><div>{order.dueDate.split('-').reverse().join('-')}</div></div>
                                     </div>
                                     <div className="flex flex-col items-end justify-start">
                                         <QRCodeSVG
                                             value={`https://app.crowngatedental.in/order/${order.id}`}
-                                            size={60} // Fixed size, or responsive?
+                                            size={60}
                                             level="L"
                                         />
                                         <div className="text-[6pt] text-center w-full mt-1 font-mono">{order.id}</div>

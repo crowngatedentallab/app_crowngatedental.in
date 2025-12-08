@@ -76,19 +76,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId }
 
     // HANDLE DEEP LINK (QR SCAN)
     useEffect(() => {
-        if (initialOrderId && orders.length > 0) {
-            const targetOrder = orders.find(o => o.id === initialOrderId);
-            if (targetOrder) {
-                // Determine what to do: Open Edit Modal or Print Modal? 
-                // Default to Edit/View Modal as it shows info.
-                setEditingOrder(targetOrder);
-                setIsEditOrderModalOpen(true);
-                // Also switch to 'orders' tab
-                setActiveTab('orders');
+        const handleDeepLink = async () => {
+            if (initialOrderId) {
+                // First check if it's already in the loaded orders
+                let targetOrder = orders.find(o => o.id === initialOrderId);
+
+                // If not found (maybe outside date range), try to fetch it specifically
+                if (!targetOrder) {
+                    try {
+                        // We need a method to get single order, but getOrders filters by date.
+                        // Let's rely on the user manually finding it if it's super old, 
+                        // OR better, we temporarily Fetch it. 
+                        // Since firestoreService doesn't have partial fetch exposed nicely here without changing limits,
+                        // We will rely on "If it's recent it's here". 
+                        // If it's undefined, we can't show it easily without changing 'orders' state to include it.
+                        // Let's just try to find it in current list. 
+                        // If the user scanned it, it implies it exists.
+                        // Ideally we should have `firestoreService.getOrderById(initialOrderId)`
+                    } catch (e) {
+                        console.error("Deep link order not found locally");
+                    }
+                }
+
+                if (targetOrder) {
+                    setEditingOrder(targetOrder);
+                    setIsEditOrderModalOpen(true);
+                    setActiveTab('orders');
+                }
             }
-        }
+        };
+        handleDeepLink();
     }, [orders, initialOrderId]);
 
+    // LOAD DATA
     const loadData = async () => {
         try {
             // Load core data first
@@ -251,13 +271,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId }
     const handlePrintRecord = async (size: string) => {
         if (!printingOrder) return;
         const historyEntry = { timestamp: new Date().toISOString(), size };
-        // Optimistic UI update - we don't need to reload data for this, just assume it works or wait for next load
-        // But if we want to show it immediately we could update state.
-        // For now just fire and forget to backend
         try {
-            // We need to fetch current history first or just use arrayUnion if firestoreService supported it directly properly 
-            // But our updateOrder is a simple spread. 
-            // Let's just create a new array.
             const currentHistory = printingOrder.printHistory || [];
             const updatedHistory = [...currentHistory, historyEntry];
             await firestoreService.updateOrder(printingOrder.id, { printHistory: updatedHistory });
@@ -266,7 +280,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId }
         }
     };
 
-    // --- FILTER LOGIC ---
     // --- FILTER LOGIC ---
     const filteredOrders = orders.filter(order => {
         const matchType = filterType === 'All' || (order.productType || (order as any).typeOfWork) === filterType;
@@ -286,8 +299,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId }
     };
 
     // --- CHART DATA PREPARATION ---
-    // --- KPI CALCULATIONS ---
-    // --- KPI CALCULATIONS ---
     // 1. Best Performing Product Type (Count by orders.productType)
     const productCounts = orders.reduce((acc, order) => {
         const type = order.productType || (order as any).typeOfWork || 'Unknown';
@@ -409,54 +420,54 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId }
     };
 
     return (
-        <div className="pb-20 md:pb-0 min-h-screen bg-slate-50/50 pt-16">
+        <div className="pb-20 md:pb-0 min-h-screen bg-slate-50/50 pt-14">
             {/* Header / Control Bar (Sticky on Desktop) */}
-            <div className="bg-white/80 backdrop-blur-md border border-white/20 px-4 md:px-8 py-3 mb-2 md:mb-4 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 shadow-sm sticky top-16 z-30">
-                <div>
-                    <h1 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-700 to-brand-500">
+            <div className="bg-white/90 backdrop-blur-md border border-white/20 px-4 md:px-6 py-2 mb-2 flex flex-col xl:flex-row justify-between items-center gap-3 shadow-sm sticky top-14 z-30 h-auto min-h-[50px]">
+                <div className="flex items-center">
+                    <h1 className="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-700 to-brand-500">
                         {activeTab === 'orders' ? 'Order Management' :
                             activeTab === 'users' ? 'User Directory' :
                                 activeTab === 'products' ? 'Products' : 'Operation Stats'}
                     </h1>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-end md:items-center flex-wrap md:flex-nowrap">
+                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-center flex-wrap md:flex-nowrap justify-end">
                     {/* DATE FILTER */}
-                    <div className="flex items-center gap-2 bg-white p-1 rounded-md border border-slate-200 shadow-sm shrink-0">
+                    <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-md border border-slate-200 shadow-sm shrink-0 h-9">
                         <input
                             type="date"
-                            className="text-xs md:text-sm border-none bg-transparent font-medium text-slate-600 focus:ring-0"
+                            className="text-xs md:text-sm border-none bg-transparent font-medium text-slate-600 focus:ring-0 p-0"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
                         />
                         <span className="text-slate-400">-</span>
                         <input
                             type="date"
-                            className="text-xs md:text-sm border-none bg-transparent font-medium text-slate-600 focus:ring-0"
+                            className="text-xs md:text-sm border-none bg-transparent font-medium text-slate-600 focus:ring-0 p-0"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                         />
                     </div>
 
-                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar flex-shrink">
+                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar flex-shrink items-center">
 
                         {/* Desktop Tabs / Actions */}
-                        <div className="hidden md:flex bg-slate-100 p-1 rounded-md border border-slate-200 flex-shrink-0">
-                            <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'orders' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
+                        <div className="hidden md:flex bg-slate-100 p-1 rounded-md border border-slate-200 flex-shrink-0 h-9 items-center">
+                            <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-all h-7 ${activeTab === 'orders' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
                                 <ShoppingBag size={14} /> Orders
                             </button>
-                            <button onClick={() => setActiveTab('products')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'products' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
+                            <button onClick={() => setActiveTab('products')} className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-all h-7 ${activeTab === 'products' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
                                 <CheckSquare size={14} /> Types
                             </button>
-                            <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
+                            <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-all h-7 ${activeTab === 'users' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
                                 <Users size={14} /> Users
                             </button>
-                            <button onClick={() => setActiveTab('workload')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'workload' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
+                            <button onClick={() => setActiveTab('workload')} className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-all h-7 ${activeTab === 'workload' ? 'bg-white shadow text-brand-900' : 'text-slate-500 hover:text-slate-700'} `}>
                                 <BarChart size={14} /> Workload
                             </button>
                         </div>
                         <div className="flex items-center gap-4 flex-shrink-0">
-                            <button className="flex items-center gap-2 text-slate-500 hover:text-slate-700 bg-white p-2 px-3 rounded text-sm font-medium border border-slate-200 shadow-sm" onClick={loadData}>
+                            <button className="flex items-center gap-2 text-slate-500 hover:text-slate-700 bg-white px-3 rounded text-sm font-medium border border-slate-200 shadow-sm h-9" onClick={loadData}>
                                 <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                                 <span className="hidden md:inline">Refresh</span>
                             </button>

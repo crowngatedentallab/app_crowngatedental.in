@@ -7,10 +7,16 @@ import { OrderForm } from '../components/OrderForm';
 import { UserForm } from '../components/UserForm';
 import { MobileNav } from '../components/MobileNav';
 import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil, Plus } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { StatusBadge } from '../components/StatusBadge';
 
 export const AdminDashboard: React.FC = () => {
+    // DATE FILTER STATE
+    const currentYear = new Date().getFullYear();
+    const [startDate, setStartDate] = useState(`${currentYear}-01-01`);
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+
+    // EXISTING STATE
     const [activeTab, setActiveTab] = useState<'orders' | 'users' | 'products' | 'workload'>('orders');
     const [orders, setOrders] = useState<Order[]>([]);
     const [users, setUsers] = useState<User[]>([]);
@@ -21,8 +27,6 @@ export const AdminDashboard: React.FC = () => {
     const [productSearchTerm, setProductSearchTerm] = useState('');
 
     const [productCounters, setProductCounters] = useState<Record<string, number>>({});
-    // const [notifications, setNotifications] = useState<Notification[]>([]); // Removed unused
-    // const [showNotifications, setShowNotifications] = useState(false); // Removed unused
 
     // MODAL STATE
     const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -36,7 +40,6 @@ export const AdminDashboard: React.FC = () => {
     // FILTERS STATE
     const [filterType, setFilterType] = useState('All');
     const [filterDoctor, setFilterDoctor] = useState('All');
-
     const [filterStatus, setFilterStatus] = useState('All');
     const [orderSearch, setOrderSearch] = useState('');
 
@@ -57,13 +60,13 @@ export const AdminDashboard: React.FC = () => {
             setLoading(false);
         };
         init();
-    }, []);
+    }, [startDate, endDate]);
 
     const loadData = async () => {
         try {
             // Load core data first
             const [ordersData, usersData, productsData] = await Promise.all([
-                firestoreService.getOrders(),
+                firestoreService.getOrders(startDate, endDate),
                 firestoreService.getUsers(),
                 firestoreService.getProducts()
             ]);
@@ -82,7 +85,6 @@ export const AdminDashboard: React.FC = () => {
 
         } catch (error) {
             console.error("Critical error loading dashboard data:", error);
-            // Even if this fails, we should try to render what we can, but if core fails, we are in trouble.
         }
     };
 
@@ -112,6 +114,7 @@ export const AdminDashboard: React.FC = () => {
             alert("Failed to update technician assignment");
         }
     };
+
     const handleAddProduct = async () => {
         if (!newProductName.trim() || !newProductCode.trim()) return;
         await firestoreService.createProduct({
@@ -362,27 +365,47 @@ export const AdminDashboard: React.FC = () => {
                     </h1>
                 </div>
 
-                <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
-                    {/* Desktop Tabs / Actions */}
-                    <div className="hidden md:flex bg-slate-100 p-1 rounded-md border border-slate-200 mr-4">
-                        <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'orders' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
-                            <ShoppingBag size={14} /> Orders
-                        </button>
-                        <button onClick={() => setActiveTab('products')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'products' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
-                            <CheckSquare size={14} /> Types
-                        </button>
-                        <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
-                            <Users size={14} /> Users
-                        </button>
-                        <button onClick={() => setActiveTab('workload')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'workload' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
-                            <BarChart size={14} /> Workload
-                        </button>
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-end md:items-center">
+                    {/* DATE FILTER */}
+                    <div className="flex items-center gap-2 bg-white p-1 rounded-md border border-slate-200 shadow-sm">
+                        <input
+                            type="date"
+                            className="text-xs md:text-sm border-none bg-transparent font-medium text-slate-600 focus:ring-0"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                        />
+                        <span className="text-slate-400">-</span>
+                        <input
+                            type="date"
+                            className="text-xs md:text-sm border-none bg-transparent font-medium text-slate-600 focus:ring-0"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                        />
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button className="flex items-center gap-2 text-slate-500 hover:text-slate-700 bg-white p-2 px-3 rounded text-sm font-medium border border-slate-200 shadow-sm" onClick={loadData}>
-                            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                            <span className="hidden md:inline">Refresh</span>
-                        </button>
+
+                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
+
+                        {/* Desktop Tabs / Actions */}
+                        <div className="hidden md:flex bg-slate-100 p-1 rounded-md border border-slate-200 mr-4">
+                            <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'orders' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
+                                <ShoppingBag size={14} /> Orders
+                            </button>
+                            <button onClick={() => setActiveTab('products')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'products' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
+                                <CheckSquare size={14} /> Types
+                            </button>
+                            <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
+                                <Users size={14} /> Users
+                            </button>
+                            <button onClick={() => setActiveTab('workload')} className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all ${activeTab === 'workload' ? 'bg-white shadow text-brand-900' : 'text-slate-500'}`}>
+                                <BarChart size={14} /> Workload
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <button className="flex items-center gap-2 text-slate-500 hover:text-slate-700 bg-white p-2 px-3 rounded text-sm font-medium border border-slate-200 shadow-sm" onClick={loadData}>
+                                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                                <span className="hidden md:inline">Refresh</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -423,28 +446,9 @@ export const AdminDashboard: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* C. Monthly Performance */}
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
-                                <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide text-center mb-4">Monthly Performance</h3>
-                                <div className="flex justify-between items-center w-full px-4 border-b border-slate-100 pb-2 mb-2">
-                                    <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                                        <TrendingUp size={16} className="text-green-500" /> Best
-                                    </span>
-                                    <div className="text-right">
-                                        <div className="text-sm font-bold text-slate-800">{bestMonth[0]}</div>
-                                        <div className="text-xs text-slate-400">{bestMonth[1]} Orders</div>
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center w-full px-4">
-                                    <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                                        <TrendingUp size={16} className="text-red-500 rotate-180" /> Worst
-                                    </span>
-                                    <div className="text-right">
-                                        <div className="text-sm font-bold text-slate-800">{worstMonth[0]}</div>
-                                        <div className="text-xs text-slate-400">{worstMonth[1]} Orders</div>
-                                    </div>
-                                </div>
-                            </div>
+                            {/* C. Monthly Performance (REMOVED) */}
+                            {/* D. Top Doctor / Clinic (NEW) moved here if grid has space or kept as is, but we want 3 columns now? NO, keep grid wrapper, remove this card, chart goes below */}
+
 
                             {/* D. Top Doctor / Clinic (NEW) */}
                             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
@@ -467,6 +471,32 @@ export const AdminDashboard: React.FC = () => {
                                         <span className="text-slate-400 font-medium">No Data</span>
                                     )}
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* MONTHLY TREND CHART */}
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-slate-800">Case Volume Trend</h3>
+                                <div className="flex gap-2 text-sm">
+                                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-emerald-500"></div> Max</div>
+                                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-red-500"></div> Min</div>
+                                </div>
+                            </div>
+                            <div className="h-64 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={monthlyData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tick={{ fill: '#64748b' }} />
+                                        <YAxis fontSize={12} tickLine={false} axisLine={false} tick={{ fill: '#64748b' }} />
+                                        <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                                        <Bar dataKey="cases" radius={[4, 4, 0, 0]} maxBarSize={50}>
+                                            {monthlyData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.cases === Math.max(...monthlyData.map(d => d.cases)) && entry.cases > 0 ? '#10b981' : entry.cases === Math.min(...monthlyData.map(d => d.cases)) && entry.cases > 0 ? '#ef4444' : '#6366f1'} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
 

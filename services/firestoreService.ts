@@ -74,8 +74,21 @@ export const firestoreService = {
     },
 
     // --- ORDERS ---
-    getOrders: async (): Promise<Order[]> => {
-        const querySnapshot = await getDocs(collection(db, "orders"));
+    getOrders: async (startDate?: string, endDate?: string): Promise<Order[]> => {
+        const ordersRef = collection(db, "orders");
+        let q;
+
+        if (startDate && endDate) {
+            q = query(
+                ordersRef,
+                where("submissionDate", ">=", startDate),
+                where("submissionDate", "<=", endDate)
+            );
+        } else {
+            q = query(ordersRef);
+        }
+
+        const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
     },
 

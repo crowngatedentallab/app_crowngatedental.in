@@ -35,18 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSid
         <div className="flex items-center gap-2 md:gap-6">
           <NotificationBell user={currentUser} onClick={() => onNavigate && onNavigate('notifications')} />
 
-          <div className="flex flex-col items-end hidden sm:flex">
-            <span className="text-sm font-bold text-slate-800">{currentUser.fullName}</span>
-            <span className="text-[10px] uppercase text-slate-500 tracking-wider font-semibold hidden md:block">
-              {currentUser.role === UserRole.DOCTOR && currentUser.relatedEntity
-                ? currentUser.relatedEntity
-                : currentUser.role}
-            </span>
-          </div>
 
-          <div className="h-9 w-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-800 font-bold border border-brand-200 flex-shrink-0">
-            <UserIcon size={16} />
-          </div>
 
           <button
             onClick={onLogout}

@@ -17,6 +17,20 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<'dashboard' | 'notifications'>('dashboard');
 
+  // Basic Routing for QR Scans
+  const [initialOrderId, setInitialOrderId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    // Check for URL path like /order/:id
+    const path = window.location.pathname;
+    if (path.startsWith('/order/')) {
+      const id = path.split('/')[2];
+      if (id) {
+        setInitialOrderId(id);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     // Initialize DB defaults (Admin user, Products)
     firestoreService.initializeDefaults();
@@ -49,22 +63,7 @@ export default function App() {
     return <LoginPage onLoginSuccess={handleLogin} />;
   }
 
-  // Basic Routing for QR Scans
-  const [initialOrderId, setInitialOrderId] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
-    // Check for URL path like /order/:id
-    const path = window.location.pathname;
-    if (path.startsWith('/order/')) {
-      const id = path.split('/')[2];
-      if (id) {
-        setInitialOrderId(id);
-        // Optional: Clean URL to avoid stuck state on reload? 
-        // window.history.replaceState({}, '', '/'); 
-        // Better to keep it so refresh works, but need to handle "already opened" logic in dashboard.
-      }
-    }
-  }, []);
 
   const renderView = () => {
     if (currentView === 'notifications') {

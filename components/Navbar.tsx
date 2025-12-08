@@ -8,14 +8,15 @@ interface NavbarProps {
   currentUser: User | null;
   onLogout: () => void;
   toggleSidebar: () => void;
+  onNavigate?: (view: 'dashboard' | 'notifications') => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSidebar }) => {
+export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSidebar, onNavigate }) => {
   return (
     <nav className="h-16 bg-white border-b border-slate-200 fixed top-0 w-full z-50 flex items-center justify-between px-4 lg:px-8 shadow-sm">
       <div className="flex items-center space-x-4">
         {/* Mobile menu removed as per user request */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onNavigate && onNavigate('dashboard')}>
           <div className="w-10 h-10 flex items-center justify-center rounded-lg overflow-hidden flex-shrink-0">
             <Logo className="w-full h-full" />
           </div>
@@ -32,7 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSid
 
       {currentUser && (
         <div className="flex items-center gap-2 md:gap-6">
-          <NotificationBell user={currentUser} />
+          <NotificationBell user={currentUser} onClick={() => onNavigate && onNavigate('notifications')} />
 
           <div className="flex flex-col items-end hidden sm:flex">
             <span className="text-sm font-bold text-slate-800">{currentUser.fullName}</span>

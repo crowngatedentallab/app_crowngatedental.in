@@ -9,10 +9,13 @@ import { DoctorDashboard } from './pages/DoctorDashboard';
 import { TechnicianView } from './pages/TechnicianView';
 import { LoginPage } from './pages/LoginPage';
 
+import { NotificationsPage } from './pages/NotificationsPage';
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'notifications'>('dashboard');
 
   useEffect(() => {
     // Initialize DB defaults (Admin user, Products)
@@ -28,11 +31,13 @@ export default function App() {
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
+    setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
     authService.logout();
     setCurrentUser(null);
+    setCurrentView('dashboard');
   };
 
   if (loading) {
@@ -45,6 +50,10 @@ export default function App() {
   }
 
   const renderView = () => {
+    if (currentView === 'notifications') {
+      return <NotificationsPage user={currentUser} onBack={() => setCurrentView('dashboard')} />;
+    }
+
     // Normalize role to uppercase to handle legacy/manual data issues
     const role = currentUser.role?.toUpperCase();
 
@@ -66,6 +75,7 @@ export default function App() {
         currentUser={currentUser}
         onLogout={handleLogout}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onNavigate={(view) => setCurrentView(view)}
       />
 
       <main className="relative pt-4">

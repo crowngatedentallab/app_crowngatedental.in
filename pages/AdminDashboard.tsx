@@ -6,7 +6,7 @@ import { Modal } from '../components/Modal';
 import { OrderForm } from '../components/OrderForm';
 import { UserForm } from '../components/UserForm';
 import { MobileNav } from '../components/MobileNav';
-import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil, Plus } from 'lucide-react';
+import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil, Plus, Stethoscope, Smile, Hammer, ChevronDown, ChevronUp } from 'lucide-react';
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { StatusBadge } from '../components/StatusBadge';
 
@@ -42,6 +42,11 @@ export const AdminDashboard: React.FC = () => {
     const [filterDoctor, setFilterDoctor] = useState('All');
     const [filterStatus, setFilterStatus] = useState('All');
     const [orderSearch, setOrderSearch] = useState('');
+    const [expandedTechs, setExpandedTechs] = useState<string[]>([]); // For Workload View
+
+    const toggleTechExpansion = (techId: string) => {
+        setExpandedTechs(prev => prev.includes(techId) ? prev.filter(id => id !== techId) : [...prev, techId]);
+    };
 
     const formatDate = (dateString: string) => {
         if (!dateString) return '-';
@@ -107,8 +112,15 @@ export const AdminDashboard: React.FC = () => {
 
     const handleAssignTechnician = async (orderId: string, techName: string) => {
         try {
-            await firestoreService.updateOrder(orderId, { assignedTech: techName });
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, assignedTech: techName } : o));
+            await firestoreService.updateOrder(orderId, {
+                assignedTech: techName,
+                assignedDate: techName ? new Date().toISOString() : undefined
+            });
+            setOrders(prev => prev.map(o => o.id === orderId ? {
+                ...o,
+                assignedTech: techName,
+                assignedDate: techName ? new Date().toISOString() : undefined
+            } : o));
         } catch (error) {
             console.error("Failed to assign technician", error);
             alert("Failed to update technician assignment");
@@ -581,9 +593,13 @@ export const AdminDashboard: React.FC = () => {
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <div className="flex flex-col">
-                                                            <span className="font-bold text-slate-900 text-sm">{order.patientName}</span>
-                                                            <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
-                                                                Dr. {order.doctorName}
+                                                            <span className="font-bold text-slate-900 text-sm flex items-center gap-1">
+                                                                <Smile size={14} className="text-slate-400" />
+                                                                {order.patientName}
+                                                            </span>
+                                                            <span className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
+                                                                <Stethoscope size={14} className="text-brand-500" />
+                                                                {order.doctorName.replace(/^Dr\.\s*/i, '')}
                                                             </span>
                                                         </div>
                                                     </td>
@@ -640,7 +656,10 @@ export const AdminDashboard: React.FC = () => {
                                                         <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 rounded">{order.id}</span>
                                                         <span className="text-[10px] font-bold uppercase text-slate-400">{formatDate(order.submissionDate)}</span>
                                                     </div>
-                                                    <h3 className="font-bold text-slate-900 text-lg leading-tight">{order.patientName}</h3>
+                                                    <h3 className="font-bold text-slate-900 text-lg leading-tight flex items-center gap-2">
+                                                        <Smile size={18} className="text-slate-400" />
+                                                        {order.patientName}
+                                                    </h3>
                                                 </div>
                                                 <StatusBadge status={order.status} />
                                             </div>
@@ -653,9 +672,14 @@ export const AdminDashboard: React.FC = () => {
                                             </div>
 
                                             <div className="flex justify-between items-end mt-2 pt-3 border-t border-slate-50">
-                                                <div className="text-xs text-slate-500 space-y-1">
-                                                    <div className="flex items-center gap-1.5"><Users size={12} className="text-slate-400" /> Dr. {order.doctorName}</div>
-                                                    <div className="flex items-center gap-1.5 font-medium text-slate-700"><Calendar size={12} className="text-slate-400" /> Due: {formatDate(order.dueDate)}</div>
+                                                <div className="text-xs text-slate-500 space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <Stethoscope size={14} className="text-brand-500" />
+                                                        <span className="font-medium text-slate-700">{order.doctorName.replace(/^Dr\.\s*/i, '')}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 font-medium text-slate-700">
+                                                        <Calendar size={12} className="text-slate-400" /> Due: {formatDate(order.dueDate)}
+                                                    </div>
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button onClick={() => openEditOrderModal(order)} className="p-2 bg-white text-slate-400 hover:text-brand-600 border border-slate-200 rounded shadow-sm">
@@ -899,13 +923,22 @@ export const AdminDashboard: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {users.filter(u => u.role === UserRole.TECHNICIAN).map(tech => {
                                     const techOrders = orders.filter(o => o.assignedTech === tech.fullName && o.status !== OrderStatus.DELIVERED);
+                                    const isExpanded = expandedTechs.includes(tech.id);
+                                    const visibleOrders = isExpanded ? techOrders : techOrders.slice(0, 5);
+                                    const hasMore = techOrders.length > 5;
+
                                     return (
                                         <div key={tech.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
                                             {/* Card Header */}
                                             <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                                                <div>
-                                                    <h3 className="font-bold text-slate-800">{tech.fullName}</h3>
-                                                    <p className="text-xs text-slate-500 uppercase font-medium">{tech.role}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="bg-white p-1.5 rounded-full border border-slate-200">
+                                                        <Hammer size={16} className="text-slate-500" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-bold text-slate-800">{tech.fullName}</h3>
+                                                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{tech.role}</p>
+                                                    </div>
                                                 </div>
                                                 <div className="bg-brand-100 text-brand-800 font-bold text-sm px-2.5 py-1 rounded-full">
                                                     {techOrders.length} <span className="text-[10px] font-normal opacity-75">active</span>
@@ -920,35 +953,57 @@ export const AdminDashboard: React.FC = () => {
                                                         No active orders
                                                     </div>
                                                 ) : (
-                                                    techOrders.map(order => (
-                                                        <div key={order.id} className="bg-slate-50 border border-slate-100 rounded-lg p-3 hover:border-brand-200 transition-colors group">
-                                                            <div className="flex justify-between items-start mb-2">
-                                                                <div>
-                                                                    <div className="font-mono text-[10px] font-bold text-slate-400">{order.id}</div>
-                                                                    <div className="font-bold text-slate-800 text-sm">{order.patientName}</div>
-                                                                </div>
-                                                                <StatusBadge status={order.status} />
-                                                            </div>
-
-                                                            <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-100">
-                                                                <div className="text-[10px] text-slate-500 font-medium">
-                                                                    Due: {formatDate(order.dueDate)}
+                                                    <>
+                                                        {visibleOrders.map(order => (
+                                                            <div key={order.id} className="bg-slate-50 border border-slate-100 rounded-lg p-3 hover:border-brand-200 transition-colors group">
+                                                                <div className="flex justify-between items-start mb-2">
+                                                                    <div>
+                                                                        <div className="font-mono text-[10px] font-bold text-slate-400 mb-0.5">{order.id}</div>
+                                                                        <div className="font-bold text-slate-800 text-sm">{order.patientName}</div>
+                                                                    </div>
+                                                                    <StatusBadge status={order.status} />
                                                                 </div>
 
-                                                                {/* Re-assign Dropdown (visible on hover/focus) */}
-                                                                <select
-                                                                    className="text-[10px] border border-slate-200 bg-white rounded p-1 outline-none focus:ring-1 focus:ring-brand-500 w-24 opacity-60 group-hover:opacity-100 transition-opacity"
-                                                                    value={tech.fullName}
-                                                                    onChange={(e) => handleAssignTechnician(order.id, e.target.value)}
-                                                                >
-                                                                    {users.filter(u => u.role === UserRole.TECHNICIAN).map(t => (
-                                                                        <option key={t.id} value={t.fullName}>{t.fullName}</option>
-                                                                    ))}
-                                                                    <option value="">Unassign</option>
-                                                                </select>
+                                                                <div className="flex flex-col gap-1 mt-2 pt-2 border-t border-slate-200/50">
+                                                                    <div className="flex justify-between items-center text-[10px] text-slate-500 font-medium">
+                                                                        <span>Assigned:</span>
+                                                                        <span className="font-mono">{formatDate(order.assignedDate || '')}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-between items-center text-[10px] text-slate-500 font-medium">
+                                                                        <span>Due Date:</span>
+                                                                        <span className={`font-mono ${new Date(order.dueDate) < new Date() ? 'text-red-600 font-bold' : ''}`}>{formatDate(order.dueDate)}</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="mt-2 pt-2 border-t border-slate-200/50 flex justify-end">
+                                                                    {/* Re-assign Dropdown (visible on hover/focus) */}
+                                                                    <select
+                                                                        className="text-[10px] border border-slate-200 bg-white rounded p-1 outline-none focus:ring-1 focus:ring-brand-500 w-full opacity-60 group-hover:opacity-100 transition-opacity"
+                                                                        value={tech.fullName}
+                                                                        onChange={(e) => handleAssignTechnician(order.id, e.target.value)}
+                                                                    >
+                                                                        {users.filter(u => u.role === UserRole.TECHNICIAN).map(t => (
+                                                                            <option key={t.id} value={t.fullName}>{t.fullName}</option>
+                                                                        ))}
+                                                                        <option value="">Unassign</option>
+                                                                    </select>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ))
+                                                        ))}
+
+                                                        {hasMore && (
+                                                            <button
+                                                                onClick={() => toggleTechExpansion(tech.id)}
+                                                                className="w-full py-2 text-xs font-bold text-slate-500 hover:text-brand-600 hover:bg-slate-50 rounded border border-dashed border-slate-200 flex items-center justify-center gap-1 transition-colors"
+                                                            >
+                                                                {isExpanded ? (
+                                                                    <>Show Less <ChevronUp size={12} /></>
+                                                                ) : (
+                                                                    <>View {techOrders.length - 5} More <ChevronDown size={12} /></>
+                                                                )}
+                                                            </button>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         </div>

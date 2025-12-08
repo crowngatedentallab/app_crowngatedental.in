@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User } from '../types';
-import { LogOut, Filter, CheckSquare, Clock, ChevronRight, Lock, CheckCircle2, RefreshCw } from 'lucide-react';
+import { LogOut, Filter, CheckSquare, Clock, ChevronRight, Lock, CheckCircle2, RefreshCw, Stethoscope } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { MobileNav } from '../components/MobileNav';
 import { Modal } from '../components/Modal';
@@ -151,7 +151,10 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
               <div className="space-y-2 pl-2 text-sm text-slate-600 mt-4 pt-4 border-t border-slate-50">
                 <div className="flex justify-between">
                   <span className="text-xs uppercase font-bold text-slate-400">Doctor</span>
-                  <span>{order.doctorName}</span>
+                  <div className="flex items-center gap-1">
+                    <Stethoscope size={14} className="text-slate-400" />
+                    <span>{order.doctorName.replace(/^Dr\.\s*/i, '')}</span>
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-xs uppercase font-bold text-slate-400">Due Date</span>

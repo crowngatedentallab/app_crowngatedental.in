@@ -17,6 +17,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<'dashboard' | 'notifications'>('dashboard');
 
+  // Global Refresh Trigger
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
   // Basic Routing for QR Scans
   const [initialOrderId, setInitialOrderId] = useState<string | undefined>(undefined);
 
@@ -64,9 +67,6 @@ export default function App() {
   }
 
 
-
-  // Global Refresh Trigger
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleManualRefresh = () => {
     setRefreshTrigger(prev => prev + 1);

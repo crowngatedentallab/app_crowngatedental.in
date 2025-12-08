@@ -2,16 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User, Product } from '../types';
-import { Plus, Calendar, FileText, Lock, Loader2, X, RefreshCw } from 'lucide-react';
+import { Plus, Calendar, FileText, Lock, Loader2, X } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
-import { MobileNav } from '../components/MobileNav';
 import { MobileNav } from '../components/MobileNav';
 
 interface DoctorDashboardProps {
   user: User;
+  refreshTrigger?: number;
+  initialOrderId?: string;
 }
 
-export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
+export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user, refreshTrigger }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -31,6 +32,12 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
   useEffect(() => {
     loadData();
   }, [user]);
+
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      loadData();
+    }
+  }, [refreshTrigger]);
 
   const loadData = async () => {
     const [allOrders, allProducts] = await Promise.all([
@@ -108,13 +115,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user }) => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={loadData}
-            className="p-2 text-slate-500 hover:text-brand-600 bg-white rounded-full border border-slate-200 shadow-sm transition-all active:scale-95"
-            title="Refresh Data"
-          >
-            <RefreshCw size={20} className={isSubmitting ? 'animate-spin' : ''} />
-          </button>
+
           <button
             onClick={() => setShowForm(!showForm)}
             disabled={isSubmitting}

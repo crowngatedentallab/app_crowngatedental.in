@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { firestoreService } from '../services/firestoreService';
 import { Order, OrderStatus, User } from '../types';
-import { LogOut, Filter, CheckSquare, Clock, ChevronRight, Lock, CheckCircle2, RefreshCw, Stethoscope } from 'lucide-react';
+import { LogOut, Filter, CheckSquare, Clock, ChevronRight, Lock, CheckCircle2, Stethoscope } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
 import { MobileNav } from '../components/MobileNav';
 import { Modal } from '../components/Modal';
@@ -11,9 +11,11 @@ import { CaseActionForm } from '../components/CaseActionForm';
 
 interface TechnicianViewProps {
   user: User;
+  refreshTrigger?: number;
+  initialOrderId?: string;
 }
 
-export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
+export const TechnicianView: React.FC<TechnicianViewProps> = ({ user, refreshTrigger }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [technicians, setTechnicians] = useState<User[]>([]);
   const [activeTab, setActiveTab] = useState<'todo' | 'history'>('todo');
@@ -24,6 +26,12 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
     loadOrders();
     // Realtime subscription removed for MVP migration
   }, [user]);
+
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      loadOrders();
+    }
+  }, [refreshTrigger]);
 
   const loadOrders = async () => {
     // Get orders where I am assigned OR I was previously assigned
@@ -89,13 +97,7 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user }) => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={loadOrders}
-            className="p-2 text-slate-400 hover:text-brand-600 rounded-full hover:bg-slate-50 transition-colors"
-            title="Refresh"
-          >
-            <RefreshCw size={20} />
-          </button>
+
           <button
             onClick={() => {
               authService.logout();

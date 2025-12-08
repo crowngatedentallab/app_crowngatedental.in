@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, UserRole } from '../types';
-import { Menu, LogOut, User as UserIcon } from 'lucide-react';
+import { Menu, LogOut, User as UserIcon, RefreshCw } from 'lucide-react';
 import { Logo } from './Logo';
 import { NotificationBell } from './NotificationBell';
 
@@ -9,9 +9,10 @@ interface NavbarProps {
   onLogout: () => void;
   toggleSidebar: () => void;
   onNavigate?: (view: 'dashboard' | 'notifications') => void;
+  onRefresh?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSidebar, onNavigate }) => {
+export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSidebar, onNavigate, onRefresh }) => {
   return (
     <nav className="h-16 bg-white border-b border-slate-200 fixed top-0 w-full z-50 flex items-center justify-between px-4 lg:px-8 shadow-sm">
       <div className="flex items-center space-x-4">
@@ -32,10 +33,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser, onLogout, toggleSid
       </div>
 
       {currentUser && (
-        <div className="flex items-center gap-2 md:gap-6">
+        <div className="flex items-center gap-2 md:gap-4">
+          <button
+            onClick={onRefresh}
+            className="p-2 text-slate-500 hover:text-brand-600 transition-colors rounded-full hover:bg-slate-50"
+            title="Refresh Data"
+          >
+            <RefreshCw size={20} />
+          </button>
+
           <NotificationBell user={currentUser} onClick={() => onNavigate && onNavigate('notifications')} />
-
-
 
           <button
             onClick={onLogout}

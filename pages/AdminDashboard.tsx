@@ -6,16 +6,25 @@ import { Modal } from '../components/Modal';
 import { OrderForm } from '../components/OrderForm';
 import { UserForm } from '../components/UserForm';
 import { MobileNav } from '../components/MobileNav';
-import { RefreshCw, Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil, Plus, Stethoscope, Smile, Hammer, ChevronDown, ChevronUp, Printer } from 'lucide-react';
+import { Filter, Trash2, CheckSquare, Users, ShoppingBag, PlusCircle, X, AlertTriangle, Clock, TrendingUp, Award, Calendar, Search, Pencil, Plus, Stethoscope, Smile, Hammer, ChevronDown, ChevronUp, Printer } from 'lucide-react';
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { StatusBadge } from '../components/StatusBadge';
 import { PrintLabelModal } from '../components/PrintLabelModal';
 
 interface AdminDashboardProps {
     initialOrderId?: string;
+    refreshTrigger?: number;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId }) => {
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId, refreshTrigger }) => {
+    // ... state ...
+
+    // RELOAD ON TRIGGER
+    useEffect(() => {
+        if (refreshTrigger && refreshTrigger > 0) {
+            loadData();
+        }
+    }, [refreshTrigger]);
     // DATE FILTER STATE
     const currentYear = new Date().getFullYear();
     const [startDate, setStartDate] = useState(`${currentYear}-01-01`);
@@ -467,10 +476,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId }
                             </button>
                         </div>
                         <div className="flex items-center gap-4 flex-shrink-0">
-                            <button className="flex items-center gap-2 text-slate-500 hover:text-slate-700 bg-white px-3 rounded text-sm font-medium border border-slate-200 shadow-sm h-9" onClick={loadData}>
-                                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                                <span className="hidden md:inline">Refresh</span>
-                            </button>
+                            {/* Refresh moved to Navbar */}
                         </div>
                     </div>
                 </div>

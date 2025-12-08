@@ -65,6 +65,13 @@ export default function App() {
 
 
 
+  // Global Refresh Trigger
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleManualRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   const renderView = () => {
     if (currentView === 'notifications') {
       return <NotificationsPage user={currentUser} onBack={() => setCurrentView('dashboard')} />;
@@ -75,11 +82,11 @@ export default function App() {
 
     switch (role) {
       case UserRole.ADMIN:
-        return <AdminDashboard initialOrderId={initialOrderId} />;
+        return <AdminDashboard initialOrderId={initialOrderId} refreshTrigger={refreshTrigger} />;
       case UserRole.DOCTOR:
-        return <DoctorDashboard user={currentUser} initialOrderId={initialOrderId} />;
+        return <DoctorDashboard user={currentUser} initialOrderId={initialOrderId} refreshTrigger={refreshTrigger} />;
       case UserRole.TECHNICIAN:
-        return <TechnicianView user={currentUser} initialOrderId={initialOrderId} />;
+        return <TechnicianView user={currentUser} initialOrderId={initialOrderId} refreshTrigger={refreshTrigger} />;
       default:
         return <div className="p-12 text-center text-red-500 font-bold">Error: Unknown User Role ({currentUser.role})</div>;
     }
@@ -92,6 +99,7 @@ export default function App() {
         onLogout={handleLogout}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onNavigate={(view) => setCurrentView(view)}
+        onRefresh={handleManualRefresh}
       />
 
       <main className="relative pt-4">

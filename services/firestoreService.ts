@@ -89,7 +89,14 @@ export const firestoreService = {
         }
 
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+        const orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+
+        // Client-side sort: Newest Submission Date first
+        return orders.sort((a, b) => {
+            const dateA = new Date(a.submissionDate || 0).getTime();
+            const dateB = new Date(b.submissionDate || 0).getTime();
+            return dateB - dateA;
+        });
     },
 
     getOrdersByRole: async (role: UserRole, userName: string): Promise<Order[]> => {
@@ -107,7 +114,14 @@ export const firestoreService = {
 
         if (q) {
             const querySnapshot = await getDocs(q);
-            return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any } as Order));
+            const orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any } as Order));
+
+            // Client-side sort: Newest Submission Date first
+            return orders.sort((a, b) => {
+                const dateA = new Date(a.submissionDate || 0).getTime();
+                const dateB = new Date(b.submissionDate || 0).getTime();
+                return dateB - dateA;
+            });
         }
         return [];
     },

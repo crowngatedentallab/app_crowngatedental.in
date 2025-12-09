@@ -66,11 +66,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId, 
 
     const formatDate = (dateString: string) => {
         if (!dateString) return '-';
-        const parts = dateString.split('-');
+        const datePart = dateString.split('T')[0];
+        const parts = datePart.split('-');
         if (parts.length === 3) {
             return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
         }
-        return dateString;
+        return datePart;
     };
 
     useEffect(() => {

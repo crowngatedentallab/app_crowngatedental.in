@@ -62,12 +62,13 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user, refreshTri
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
-    // Expects YYYY-MM-DD
-    const parts = dateString.split('-');
+    // Expects YYYY-MM-DD or ISO
+    const datePart = dateString.split('T')[0];
+    const parts = datePart.split('-');
     if (parts.length === 3) {
       return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
     }
-    return dateString;
+    return datePart;
   };
 
   // Todo: Assigned to me AND not completed

@@ -56,6 +56,20 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user, refreshT
     }
   };
 
+  // --- PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  // Reset pagination when orders change (e.g. reload)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [orders]);
+
+  const currentPaginatedOrders = orders.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -226,42 +240,69 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ user, refreshT
           <p className="text-slate-500 max-w-xs mx-auto mt-2">Use the "New Lab Order" button to submit a new case.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {orders.map(order => (
-            <div key={order.id} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-              <div className={`absolute top-0 left-0 w-1 h-full ${order.priority === 'Urgent' ? 'bg-red-500' : 'bg-brand-500'
-                }`} />
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {currentPaginatedOrders.map(order => (
+              <div key={order.id} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                <div className={`absolute top-0 left-0 w-1 h-full ${order.priority === 'Urgent' ? 'bg-red-500' : 'bg-brand-500'
+                  }`} />
 
-              <div className="flex justify-between items-start mb-3 pl-2">
-                <div>
-                  <span className="text-xs font-mono text-slate-400 block mb-1">#{order.id}</span>
-                  <h3 className="font-bold text-slate-900 text-lg leading-tight">{order.patientName}</h3>
-                  <div className="text-sm text-slate-500 font-medium">{order.productType}</div>
+                <div className="flex justify-between items-start mb-3 pl-2">
+                  <div>
+                    <span className="text-xs font-mono text-slate-400 block mb-1">#{order.id}</span>
+                    <h3 className="font-bold text-slate-900 text-lg leading-tight">{order.patientName}</h3>
+                    <div className="text-sm text-slate-500 font-medium">{order.productType}</div>
+                  </div>
+                  <StatusBadge status={order.status} />
                 </div>
-                <StatusBadge status={order.status} />
+
+                <div className="space-y-2 pl-2 text-sm text-slate-600 mt-4 pt-4 border-t border-slate-50">
+                  <div className="flex justify-between">
+                    <span>Required:</span>
+                    <span className="font-bold text-slate-800">{formatDate(order.dueDate)}</span>
+                  </div>
+                  {order.shade && (
+                    <div className="flex justify-between">
+                      <span>Shade:</span>
+                      <span className="font-mono bg-slate-100 px-1.5 rounded text-xs">{order.shade}</span>
+                    </div>
+                  )}
+                  {order.toothNumber && (
+                    <div className="flex justify-between">
+                      <span>Tooth #:</span>
+                      <span className="font-mono bg-slate-100 px-1.5 rounded text-xs">{order.toothNumber}</span>
+                    </div>
+                  )}
+                </div>
               </div>
+            ))}
+          </div>
 
-              <div className="space-y-2 pl-2 text-sm text-slate-600 mt-4 pt-4 border-t border-slate-50">
-                <div className="flex justify-between">
-                  <span>Required:</span>
-                  <span className="font-bold text-slate-800">{formatDate(order.dueDate)}</span>
+          {/* PAGINATION CONTROLS */}
+          {orders.length > ITEMS_PER_PAGE && (
+            <div className="flex justify-center mt-8">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <div className="flex items-center gap-1 px-2">
+                  <span className="text-sm text-slate-600">Page {currentPage} of {Math.ceil(orders.length / ITEMS_PER_PAGE)}</span>
                 </div>
-                {order.shade && (
-                  <div className="flex justify-between">
-                    <span>Shade:</span>
-                    <span className="font-mono bg-slate-100 px-1.5 rounded text-xs">{order.shade}</span>
-                  </div>
-                )}
-                {order.toothNumber && (
-                  <div className="flex justify-between">
-                    <span>Tooth #:</span>
-                    <span className="font-mono bg-slate-100 px-1.5 rounded text-xs">{order.toothNumber}</span>
-                  </div>
-                )}
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(orders.length / ITEMS_PER_PAGE), prev + 1))}
+                  disabled={currentPage === Math.ceil(orders.length / ITEMS_PER_PAGE)}
+                  className="px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {/* Mobile Nav for Doctor */}

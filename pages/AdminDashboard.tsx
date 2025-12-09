@@ -301,6 +301,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId, 
         return matchType && matchDoctor && matchStatus && matchSearch;
     });
 
+    // --- PAGINATION ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filterType, filterDoctor, filterStatus, orderSearch]);
+
+    const currentPaginatedOrders = filteredOrders.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
     const clearFilters = () => {
         setFilterType('All');
         setFilterDoctor('All');
@@ -672,10 +686,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId, 
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 bg-white">
-                                        {filteredOrders.length === 0 ? (
+                                        {currentPaginatedOrders.length === 0 ? (
                                             <tr><td colSpan={9} className="text-center py-12 text-slate-400 font-medium">No orders found matching criteria.</td></tr>
                                         ) : (
-                                            filteredOrders.map(order => (
+                                            currentPaginatedOrders.map(order => (
                                                 <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
                                                     <td className="px-6 py-4 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-r border-transparent group-hover:border-slate-100">
                                                         <div className="flex flex-col">
@@ -735,6 +749,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialOrderId, 
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* PAGINATION CONTROLS */}
+                            {filteredOrders.length > 0 && (
+                                <div className="p-4 border-t border-slate-200 flex items-center justify-between bg-white">
+                                    <div className="text-xs text-slate-500">
+                                        Showing <span className="font-bold">{Math.min(filteredOrders.length, (currentPage - 1) * ITEMS_PER_PAGE + 1)}</span> to <span className="font-bold">{Math.min(filteredOrders.length, currentPage * ITEMS_PER_PAGE)}</span> of <span className="font-bold">{filteredOrders.length}</span> results
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                            disabled={currentPage === 1}
+                                            className="px-3 py-1 text-xs font-medium rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Previous
+                                        </button>
+                                        <div className="flex gap-1">
+                                            {Array.from({ length: Math.ceil(filteredOrders.length / ITEMS_PER_PAGE) }, (_, i) => i + 1)
+                                                .filter(p => p === 1 || p === Math.ceil(filteredOrders.length / ITEMS_PER_PAGE) || Math.abs(currentPage - p) <= 1)
+                                                .map((p, i, arr) => (
+                                                    <React.Fragment key={p}>
+                                                        {i > 0 && arr[i - 1] !== p - 1 && <span className="px-2 py-1 text-xs text-slate-400">...</span>}
+                                                        <button
+                                                            onClick={() => setCurrentPage(p)}
+                                                            className={`w-8 h-8 flex items-center justify-center text-xs font-medium rounded border ${currentPage === p ? 'bg-brand-600 text-white border-brand-600' : 'border-slate-200 hover:bg-slate-50'}`}
+                                                        >
+                                                            {p}
+                                                        </button>
+                                                    </React.Fragment>
+                                                ))}
+                                        </div>
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredOrders.length / ITEMS_PER_PAGE), prev + 1))}
+                                            disabled={currentPage === Math.ceil(filteredOrders.length / ITEMS_PER_PAGE)}
+                                            className="px-3 py-1 text-xs font-medium rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* MOBILE CARD LIST */}
                             <div className="md:hidden flex flex-col divide-y divide-slate-100">

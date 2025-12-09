@@ -87,6 +87,20 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user, refreshTri
 
   const displayedOrders = activeTab === 'todo' ? todoOrders : completedOrders;
 
+  // --- PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  // Reset pagination when tab or list changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, displayedOrders.length]);
+
+  const currentPaginatedOrders = displayedOrders.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="p-4 max-w-lg mx-auto space-y-6 mt-16 pb-24 md:pb-20 bg-slate-50 min-h-screen">
 
@@ -135,49 +149,76 @@ export const TechnicianView: React.FC<TechnicianViewProps> = ({ user, refreshTri
             <p>No orders found in {activeTab}.</p>
           </div>
         ) : (
-          displayedOrders.map(order => (
-            <div key={order.id} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-              <div className={`absolute top-0 left-0 w-1 h-full ${order.priority === 'Urgent' ? 'bg-red-500' : 'bg-brand-500'
-                }`} />
+          <>
+            {currentPaginatedOrders.map(order => (
+              <div key={order.id} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                <div className={`absolute top-0 left-0 w-1 h-full ${order.priority === 'Urgent' ? 'bg-red-500' : 'bg-brand-500'
+                  }`} />
 
-              <div className="flex justify-between items-start mb-3 pl-2">
-                <div>
-                  <h3 className="font-bold text-slate-900 text-lg leading-tight">{order.patientName}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs font-mono text-slate-400 bg-slate-50 px-1 rounded">#{order.id}</span>
-                    <span className="text-xs font-medium text-slate-600">{order.productType}</span>
+                <div className="flex justify-between items-start mb-3 pl-2">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-lg leading-tight">{order.patientName}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs font-mono text-slate-400 bg-slate-50 px-1 rounded">#{order.id}</span>
+                      <span className="text-xs font-medium text-slate-600">{order.productType}</span>
+                    </div>
+                  </div>
+                  <StatusBadge status={order.status} />
+                </div>
+
+                <div className="space-y-2 pl-2 text-sm text-slate-600 mt-4 pt-4 border-t border-slate-50">
+                  <div className="flex justify-between">
+                    <span className="text-xs uppercase font-bold text-slate-400">Doctor</span>
+                    <div className="flex items-center gap-1">
+                      <Stethoscope size={14} className="text-slate-400" />
+                      <span>{order.doctorName.replace(/^Dr\.\s*/i, '')}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs uppercase font-bold text-slate-400">Due Date</span>
+                    <span className={`font-bold ${new Date(order.dueDate) < new Date() ? 'text-red-600' : 'text-slate-800'}`}>
+                      {formatDate(order.dueDate)}
+                    </span>
                   </div>
                 </div>
-                <StatusBadge status={order.status} />
-              </div>
 
-              <div className="space-y-2 pl-2 text-sm text-slate-600 mt-4 pt-4 border-t border-slate-50">
-                <div className="flex justify-between">
-                  <span className="text-xs uppercase font-bold text-slate-400">Doctor</span>
-                  <div className="flex items-center gap-1">
-                    <Stethoscope size={14} className="text-slate-400" />
-                    <span>{order.doctorName.replace(/^Dr\.\s*/i, '')}</span>
+                {activeTab === 'todo' && (
+                  <button
+                    onClick={() => openActionModal(order)}
+                    className="w-full mt-4 bg-slate-50 hover:bg-slate-100 text-brand-700 font-bold py-3 rounded border border-slate-200 transition-colors flex justify-center items-center gap-2"
+                  >
+                    <span>Update Status</span>
+                    <ChevronRight size={16} />
+                  </button>
+                )}
+              </div>
+            ))}
+
+            {/* PAGINATION CONTROLS */}
+            {displayedOrders.length > ITEMS_PER_PAGE && (
+              <div className="flex justify-center mt-8">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <div className="flex items-center gap-1 px-2">
+                    <span className="text-sm text-slate-600">Page {currentPage} of {Math.ceil(displayedOrders.length / ITEMS_PER_PAGE)}</span>
                   </div>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs uppercase font-bold text-slate-400">Due Date</span>
-                  <span className={`font-bold ${new Date(order.dueDate) < new Date() ? 'text-red-600' : 'text-slate-800'}`}>
-                    {formatDate(order.dueDate)}
-                  </span>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(displayedOrders.length / ITEMS_PER_PAGE), prev + 1))}
+                    disabled={currentPage === Math.ceil(displayedOrders.length / ITEMS_PER_PAGE)}
+                    className="px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
-
-              {activeTab === 'todo' && (
-                <button
-                  onClick={() => openActionModal(order)}
-                  className="w-full mt-4 bg-slate-50 hover:bg-slate-100 text-brand-700 font-bold py-3 rounded border border-slate-200 transition-colors flex justify-center items-center gap-2"
-                >
-                  <span>Update Status</span>
-                  <ChevronRight size={16} />
-                </button>
-              )}
-            </div>
-          ))
+            )}
+          </>
         )}
       </div>
 
